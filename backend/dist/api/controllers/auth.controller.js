@@ -4,9 +4,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = login;
+exports.me = me;
 const db_1 = __importDefault(require("../../config/db"));
 const jwt_1 = require("../../utils/jwt");
 const config_1 = __importDefault(require("../../config"));
+/**
+ * LOGIN
+ */
 async function login(req, res) {
     const { email } = req.body;
     if (!email) {
@@ -27,14 +31,25 @@ async function login(req, res) {
     const isProd = config_1.default.NODE_ENV === "production";
     res.cookie("access_token", token, {
         httpOnly: true,
-        secure: isProd, // ❗ false in dev
-        sameSite: isProd ? "none" : "lax",
-        domain: isProd ? config_1.default.COOKIE_DOMAIN : undefined, // ❗ REMOVE domain in dev
-        maxAge: 4 * 60 * 60 * 1000, // 4 hours
+        secure: false, // localhost
+        sameSite: "lax",
+        domain: isProd ? config_1.default.COOKIE_DOMAIN : undefined,
+        maxAge: 4 * 60 * 60 * 1000,
     });
-    // 4️⃣ Response
     return res.json({
         message: "Login successful",
         role: user.role,
+    });
+}
+/**
+ * AUTH SESSION CHECK (ME)
+ */
+async function me(req, res) {
+    if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    return res.json({
+        userId: req.user.userId,
+        role: req.user.role,
     });
 }

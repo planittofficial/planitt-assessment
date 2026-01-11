@@ -3,7 +3,7 @@ import config from "../config";
 
 export interface JwtPayload {
   userId: string;
-  role: "ADMIN" | "CANDIDATE" | "admin" | "candidate";
+  role: "ADMIN" | "CANDIDATE";
 }
 
 export function signJwt(payload: JwtPayload) {

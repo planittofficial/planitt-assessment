@@ -5,6 +5,7 @@ exports.requireAdmin = requireAdmin;
 exports.requireRole = requireRole;
 function requireCandidate(req, res, next) {
     const role = req.user?.role?.toUpperCase();
+    console.log("DEBUG: Checking role for candidate access:", role, "User:", req.user);
     if (role !== "CANDIDATE") {
         return res.status(403).json({ message: "Access denied" });
     }

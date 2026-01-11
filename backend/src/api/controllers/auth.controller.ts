@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import pool from "../../config/db";
 import { signJwt } from "../../utils/jwt";
 import config from "../../config";
+import { AuthRequest } from "../middlewares/auth.middleware";
 
+/**
+ * LOGIN
+ */
 export async function login(req: Request, res: Response) {
   const { email } = req.body;
 
@@ -33,15 +37,28 @@ export async function login(req: Request, res: Response) {
 
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: isProd,                 // ❗ false in dev
-    sameSite: isProd ? "none" : "lax",
-    domain: isProd ? config.COOKIE_DOMAIN : undefined, // ❗ REMOVE domain in dev
-    maxAge: 4 * 60 * 60 * 1000, // 4 hours
+    secure: false, // localhost
+    sameSite: "lax",
+    domain: isProd ? config.COOKIE_DOMAIN : undefined,
+    maxAge: 4 * 60 * 60 * 1000,
   });
 
-  // 4️⃣ Response
   return res.json({
     message: "Login successful",
     role: user.role,
+  });
+}
+
+/**
+ * AUTH SESSION CHECK (ME)
+ */
+export async function me(req: AuthRequest, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  return res.json({
+    userId: req.user.userId,
+    role: req.user.role,
   });
 }

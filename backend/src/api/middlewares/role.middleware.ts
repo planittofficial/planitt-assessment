@@ -7,8 +7,10 @@ export function requireCandidate(
   next: NextFunction
 ) {
   const role = req.user?.role?.toUpperCase();
+  console.log("DEBUG: Checking role for candidate access:", role, "Full User Object:", req.user);
   if (role !== "CANDIDATE") {
-    return res.status(403).json({ message: "Access denied" });
+    console.log("DEBUG: Access denied due to role mismatch. Expected CANDIDATE, got:", role);
+    return res.status(403).json({ message: "Access denied. Only candidates can take assessments." });
   }
   next();
 }

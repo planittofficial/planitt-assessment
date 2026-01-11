@@ -1,0 +1,1 @@
+\"import pool from './backend/src/config/db'; pool.query(\\\"SELECT column_name, is_nullable, data_type FROM information_schema.columns WHERE table_name = 'users'\\\").then(r => { console.log(JSON.stringify(r.rows, null, 2)); process.exit(0); });\"  

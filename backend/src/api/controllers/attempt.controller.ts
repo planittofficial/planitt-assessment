@@ -1,63 +1,117 @@
 import { Response } from "express";
 import pool from "../../config/db";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { enforceTimeLimit } from "../../services/timer.service";
 import { autoGradeMCQs, calculateFinalScore } from "../../services/scoring.service";
+import { calculatePassFail } from "../../services/result.service";
 
+/**
+ * START ATTEMPT
+ */
 export async function startAttempt(req: AuthRequest, res: Response) {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { assessmentId } = req.body;
-    const userId = req.user.userId; // UUID
+    const { assessmentId, assessmentCode } = req.body;
+    const userId = req.user.userId;
 
-    if (!assessmentId) {
-      return res.status(400).json({ message: "assessmentId is required" });
+    if (!assessmentCode) {
+      return res.status(400).json({ message: "Assessment code is required" });
     }
 
-    // 1️⃣ Check assessment (schema: is_active BOOLEAN)
-    const assessment = await pool.query(
-      "SELECT id FROM assessments WHERE id = $1 AND status = 'ACTIVE'",
-      [assessmentId]
+    // 1️⃣ Validate assessment
+    let assessment;
+    console.log(`DEBUG: startAttempt - assessmentId: ${assessmentId}, assessmentCode: ${assessmentCode}`);
+    if (assessmentId) {
+      const result = await pool.query(
+        `SELECT id, duration_minutes, code FROM assessments WHERE id = $1 AND status = 'ACTIVE'`,
+        [assessmentId]
+      );
+      console.log(`DEBUG: startAttempt - Query by ID result rowCount: ${result.rowCount}`);
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Assessment not found or is inactive" });
+      }
+      assessment = result.rows[0];
+    } else {
+      const result = await pool.query(
+        `SELECT id, duration_minutes, code FROM assessments WHERE code = $1 AND status = 'ACTIVE'`,
+        [assessmentCode.toUpperCase()]
+      );
+      console.log(`DEBUG: startAttempt - Query by code result rowCount: ${result.rowCount}`);
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: "Invalid assessment code or assessment is inactive" });
+      }
+      assessment = result.rows[0];
+    }
+
+    // 2️⃣ Double check code if ID was provided
+    if (assessment.code !== assessmentCode.toUpperCase()) {
+      return res.status(403).json({ message: "Code mismatch for this assessment" });
+    }
+
+    const finalAssessmentId = assessment.id;
+
+    // 3️⃣ Check existing active attempt
+    const activeAttempt = await pool.query(
+      `SELECT id FROM attempts
+       WHERE user_id = $1
+         AND assessment_id = $2
+         AND status = 'IN_PROGRESS'`,
+      [userId, finalAssessmentId]
     );
 
-    if (!assessment.rowCount || assessment.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Assessment not found or inactive" });
-    }
-
-    // 2️⃣ Check existing active attempt (schema: status = 'started')
-    const activeAttempt = await pool.query(
-  `SELECT id FROM attempts
-   WHERE user_id = $1
-     AND assessment_id = $2
-     AND status = 'IN_PROGRESS'`,
-  [userId, assessmentId]
-);
-
-
-    if (activeAttempt.rowCount && activeAttempt.rowCount > 0) {
+    if (activeAttempt.rowCount > 0) {
       return res.status(409).json({
         message: "An active attempt already exists",
         attemptId: activeAttempt.rows[0].id,
       });
     }
 
-    // 3️⃣ Create new attempt
-const attempt = await pool.query(
-  `INSERT INTO attempts (user_id, assessment_id, status, start_time)
-   VALUES ($1, $2, 'IN_PROGRESS', NOW())
-   RETURNING id`,
-  [userId, assessmentId]
-);
+    // 4️⃣ Create new attempt
+    const attemptResult = await pool.query(
+      `INSERT INTO attempts (
+         user_id,
+         assessment_id,
+         status,
+         start_time
+       )
+       VALUES ($1, $2, 'IN_PROGRESS', NOW())
+       RETURNING id`,
+      [userId, finalAssessmentId]
+    );
 
+    const attemptId = attemptResult.rows[0].id;
 
+    // 5️⃣ Fetch assessment questions (NO correct answers)
+    const questionsResult = await pool.query(
+      `SELECT
+         q.id,
+         q.question_text,
+         q.question_type,
+         q.marks,
+         CASE WHEN LOWER(q.question_type) = 'mcq' THEN
+           (SELECT json_agg(json_build_object('id', key, 'text', value))
+            FROM jsonb_each_text(q.options) AS t(key, value))
+         ELSE NULL END AS options
+       FROM questions q
+       WHERE q.assessment_id = $1
+       ORDER BY q.created_at ASC`,
+      [finalAssessmentId]
+    );
+
+    if (questionsResult.rowCount === 0) {
+      return res.status(500).json({
+        message: "No questions configured for this assessment",
+      });
+    }
+
+    // 5️⃣ Return everything frontend needs
     return res.status(201).json({
       message: "Attempt started",
-      attemptId: attempt.rows[0].id,
+      attemptId,
+      durationMinutes: assessment.duration_minutes,
+      questions: questionsResult.rows,
     });
   } catch (error) {
     console.error("❌ startAttempt error:", error);
@@ -65,26 +119,27 @@ const attempt = await pool.query(
   }
 }
 
+/**
+ * SUBMIT ATTEMPT (MANUAL)
+ */
 export async function submitAttempt(req: AuthRequest, res: Response) {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { attemptId } = req.body;
+    const { attemptId: rawAttemptId } = req.body;
+    const attemptId = Number(rawAttemptId);
     const userId = req.user.userId;
 
-    if (!attemptId) {
-      return res.status(400).json({ message: "attemptId is required" });
+    if (!attemptId || Number.isNaN(attemptId)) {
+      return res.status(400).json({ message: "attemptId is required and must be a number" });
     }
-
-    await autoGradeMCQs(attemptId);
-const finalScore = await calculateFinalScore(attemptId);
-
 
     // 1️⃣ Fetch attempt
     const attemptResult = await pool.query(
-      `SELECT id, status FROM attempts
+      `SELECT id, status
+       FROM attempts
        WHERE id = $1 AND user_id = $2`,
       [attemptId, userId]
     );
@@ -95,38 +150,141 @@ const finalScore = await calculateFinalScore(attemptId);
 
     const attempt = attemptResult.rows[0];
 
-    // 2️⃣ Enforce timer BEFORE submit
-    const timerCheck = await enforceTimeLimit(attemptId);
-
-    if (timerCheck.expired) {
-      return res.status(403).json({
-        message: "Time expired. Attempt auto-submitted.",
-        autoSubmitted: true,
-        reason: "TIME_EXPIRED",
-      });
-    }
-
-    // 3️⃣ Ensure attempt is still active
+    // 2️⃣ Ensure attempt is active
     if (attempt.status !== "IN_PROGRESS") {
       return res.status(409).json({
         message: "Attempt already submitted",
       });
     }
 
-    // 4️⃣ Submit attempt manually
+    // 3️⃣ Submit attempt
     await pool.query(
       `UPDATE attempts
        SET status = 'SUBMITTED',
-           end_time = NOW()
-       WHERE id = $1 AND status = 'IN_PROGRESS'`,
+           end_time = NOW(),
+           is_published = false
+       WHERE id = $1`,
       [attemptId]
     );
 
+    // 4️⃣ Grade MCQs and calculate final score
+    await autoGradeMCQs(attemptId);
+    const score = await calculateFinalScore(attemptId);
+    
+    // 5️⃣ Calculate PASS/FAIL but DON'T return it to candidate yet
+    await calculatePassFail(attemptId);
+
     return res.json({
       message: "Attempt submitted successfully",
+      score: score,
     });
   } catch (error) {
     console.error("❌ submitAttempt error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * GET QUESTIONS FOR ATTEMPT
+ */
+export async function getQuestions(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const attemptId = Number(req.params.attemptId);
+    const userId = req.user.userId;
+
+    if (Number.isNaN(attemptId)) {
+      return res.status(400).json({ message: "Invalid attemptId" });
+    }
+
+    // 1️⃣ Verify attempt belongs to user
+    console.log(`DEBUG: getQuestions - attemptId: ${attemptId}, userId: ${userId}`);
+    const attemptResult = await pool.query(
+      `SELECT id, assessment_id
+       FROM attempts
+       WHERE id = $1 AND user_id = $2`,
+      [attemptId, userId]
+    );
+
+    if (attemptResult.rowCount === 0) {
+      console.log(`DEBUG: getQuestions - No attempt found for attemptId: ${attemptId}, userId: ${userId}`);
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+
+    const assessmentId = attemptResult.rows[0].assessment_id;
+
+    // 2️⃣ Fetch questions (same as startAttempt but without correct answers)
+    const questionsResult = await pool.query(
+      `SELECT
+         q.id,
+         q.question_text,
+         q.question_type,
+         q.marks,
+         CASE WHEN LOWER(q.question_type) = 'mcq' THEN
+           (SELECT json_agg(json_build_object('id', key, 'text', value))
+            FROM jsonb_each_text(q.options) AS t(key, value))
+         ELSE NULL END AS options
+       FROM questions q
+       WHERE q.assessment_id = $1
+       ORDER BY q.created_at ASC`,
+      [assessmentId]
+    );
+
+    return res.json(questionsResult.rows);
+  } catch (error) {
+    console.error("❌ getQuestions error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * SAVE ANSWER
+ */
+export async function saveAnswer(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const attemptId = Number(req.params.attemptId);
+    const { questionId, answer } = req.body;
+    const userId = req.user.userId;
+
+    if (Number.isNaN(attemptId) || !questionId || answer === undefined) {
+      return res.status(400).json({ message: "Invalid attemptId, questionId or answer" });
+    }
+
+    // 1️⃣ Verify attempt belongs to user and is active
+    console.log(`DEBUG: saveAnswer - attemptId: ${attemptId}, questionId: ${questionId}, answer: ${answer}, userId: ${userId}`);
+    const attemptResult = await pool.query(
+      `SELECT id
+       FROM attempts
+       WHERE id = $1 AND user_id = $2 AND status = 'IN_PROGRESS'`,
+      [attemptId, userId]
+    );
+
+    if (attemptResult.rowCount === 0) {
+      console.log(`DEBUG: saveAnswer - No active attempt found for attemptId: ${attemptId}, userId: ${userId}`);
+      return res.status(404).json({ message: "Active attempt not found or already submitted" });
+    }
+
+    // 2️⃣ Insert or update answer
+    const insertResult = await pool.query(
+      `INSERT INTO answers (attempt_id, question_id, answer)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (attempt_id, question_id)
+       DO UPDATE SET answer = EXCLUDED.answer
+       RETURNING id`,
+      [attemptId, questionId, answer]
+    );
+    console.log(`DEBUG: saveAnswer - Insert result:`, insertResult.rows[0]);
+
+    return res.json({ message: "Answer saved successfully", answerId: insertResult.rows[0].id });
+  } catch (error) {
+    console.error("❌ saveAnswer error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }

@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { AnswerPayload } from "@/types";
 
 export const attemptService = {
   start(assessmentCode: string, assessmentId?: number) {
@@ -12,7 +13,7 @@ export const attemptService = {
     return apiFetch(`/api/attempts/${attemptId}/questions`);
   },
 
-  saveAnswer(attemptId: number, payload: any) {
+  saveAnswer(attemptId: number, payload: AnswerPayload) {
     return apiFetch(`/api/attempts/${attemptId}/answers`, {
       method: "POST",
       body: JSON.stringify(payload),

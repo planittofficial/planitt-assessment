@@ -15,9 +15,12 @@ import {
   bulkAddQuestions,
   getAssessmentQuestions,
   deleteQuestion,
+  deleteAllQuestions,
   getCandidates,
   addCandidate,
   bulkAddCandidates,
+  deleteCandidate,
+  bulkDeleteCandidates,
   getDashboardStats,
 } from "../controllers/admin.controller";
 import { Router } from "express";
@@ -52,10 +55,13 @@ router.patch("/assessments/:assessmentId", updateAssessment);
 router.post("/assessments/:assessmentId/questions", addQuestion);
 router.post("/assessments/:assessmentId/questions/bulk", bulkAddQuestions);
 router.delete("/assessments/:assessmentId/questions/:questionId", deleteQuestion);
+router.delete("/assessments/:assessmentId/questions", deleteAllQuestions);
 
 router.get("/candidates", getCandidates);
 router.post("/candidates", addCandidate);
 router.post("/candidates/bulk", bulkAddCandidates);
+router.delete("/candidates/:id", deleteCandidate);
+router.post("/candidates/bulk-delete", bulkDeleteCandidates);
 router.get("/dashboard-stats", getDashboardStats);
 
 export default router;

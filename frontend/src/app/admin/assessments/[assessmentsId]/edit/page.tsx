@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, getAssessmentById, updateAssessment } from "@/services/admin.service";
+import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, deleteAllQuestions, getAssessmentById, updateAssessment } from "@/services/admin.service";
 import Link from "next/link";
+import { Question, Assessment } from "@/types";
 
 export default function EditAssessmentPage() {
   const params = useParams();
   const assessmentId = params.assessmentsId as string;
-  const [assessment, setAssessment] = useState<any>(null);
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [updatingCriteria, setUpdatingCriteria] = useState(false);
   const [showSmartPaste, setShowSmartPaste] = useState(false);
   const [smartPasteText, setSmartPasteText] = useState("");
-  const [parsedQuestions, setParsedQuestions] = useState<any[]>([]);
+  const [parsedQuestions, setParsedQuestions] = useState<Partial<Question>[]>([]);
 
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
@@ -23,6 +24,7 @@ export default function EditAssessmentPage() {
     marks: 1,
     correct_answer: "",
     options: ["", "", "", ""],
+    section: "Quantitative",
   });
 
   useEffect(() => {
@@ -75,8 +77,8 @@ export default function EditAssessmentPage() {
 
   function handleSmartPasteParse() {
     const lines = smartPasteText.split("\n").map(l => l.trim()).filter(l => l !== "");
-    const result: any[] = [];
-    let currentQ: any = null;
+    const result: Partial<Question>[] = [];
+    let currentQ: Partial<Question> | null = null;
 
     lines.forEach(line => {
       if (/^\d+[\.\)]/.test(line) || line.startsWith("Q:")) {
@@ -86,7 +88,8 @@ export default function EditAssessmentPage() {
           question_type: "MCQ",
           marks: 1,
           options: [],
-          correct_answer: ""
+          correct_answer: "",
+          section: "Quantitative"
         };
       } else if (currentQ) {
         if (/^[a-dA-D][\.\)]/.test(line)) {
@@ -101,6 +104,8 @@ export default function EditAssessmentPage() {
           }
         } else if (line.toLowerCase().startsWith("marks:")) {
           currentQ.marks = Number(line.split(":")[1].trim()) || 1;
+        } else if (line.toLowerCase().startsWith("section:")) {
+          currentQ.section = line.split(":")[1].trim();
         } else if (line.toLowerCase().includes("descriptive")) {
           currentQ.question_type = "DESCRIPTIVE";
         }
@@ -164,6 +169,7 @@ export default function EditAssessmentPage() {
         marks: 1,
         correct_answer: "",
         options: ["", "", "", ""],
+        section: "Quantitative",
       });
       loadQuestions();
     } catch (err) {
@@ -188,6 +194,17 @@ export default function EditAssessmentPage() {
     } catch (err) {
       console.error(err);
       alert("Failed to delete question");
+    }
+  }
+
+  async function handleDeleteAll() {
+    if (!confirm("CRITICAL: This will delete ALL questions in this assessment. Are you sure?")) return;
+    try {
+      await deleteAllQuestions(assessmentId);
+      loadQuestions();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete all questions");
     }
   }
 
@@ -348,6 +365,19 @@ export default function EditAssessmentPage() {
                     className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Section</label>
+                  <select
+                    value={newQuestion.section}
+                    onChange={(e) => setNewQuestion({ ...newQuestion, section: e.target.value })}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                  >
+                    <option value="Quantitative">Quantitative</option>
+                    <option value="Verbal">Verbal</option>
+                    <option value="Coding">Coding</option>
+                    <option value="Logical">Logical</option>
+                  </select>
+                </div>
               </div>
               {newQuestion.question_type === "MCQ" && (
                 <div className="space-y-4">
@@ -388,10 +418,20 @@ export default function EditAssessmentPage() {
         )}
 
         <div>
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-            Questions 
-            <span className="text-sm bg-neutral-800 text-gray-400 px-3 py-1 rounded-full">{questions.length}</span>
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold flex items-center gap-3">
+              Questions 
+              <span className="text-sm bg-neutral-800 text-gray-400 px-3 py-1 rounded-full">{questions.length}</span>
+            </h2>
+            {questions.length > 0 && (
+              <button
+                onClick={handleDeleteAll}
+                className="text-sm bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold"
+              >
+                🗑️ Delete All Questions
+              </button>
+            )}
+          </div>
           <div className="space-y-4">
             {loading ? (
               <p className="text-gray-500 animate-pulse">Loading questions...</p>
@@ -419,7 +459,7 @@ export default function EditAssessmentPage() {
                   </div>
                   {q.question_type === "MCQ" && q.options && (
                     <div className="grid grid-cols-2 gap-3 mt-4">
-                      {q.options.filter((o: any) => o.text).map((o: any) => (
+                      {q.options.filter((o) => o.text).map((o) => (
                         <div 
                           key={o.id} 
                           className={`px-4 py-2 rounded-lg text-sm border ${

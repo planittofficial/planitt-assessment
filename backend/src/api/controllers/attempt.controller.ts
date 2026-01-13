@@ -52,20 +52,26 @@ export async function startAttempt(req: AuthRequest, res: Response) {
 
     const finalAssessmentId = assessment.id;
 
-    // 3️⃣ Check existing active attempt
-    const activeAttempt = await pool.query(
-      `SELECT id FROM attempts
+    // 3️⃣ Check for any existing attempt (to enforce single attempt policy)
+    const existingAttempt = await pool.query(
+      `SELECT id, status FROM attempts
        WHERE user_id = $1
-         AND assessment_id = $2
-         AND status = 'IN_PROGRESS'`,
+         AND assessment_id = $2`,
       [userId, finalAssessmentId]
     );
 
-    if (activeAttempt.rowCount > 0) {
-      return res.status(409).json({
-        message: "An active attempt already exists",
-        attemptId: activeAttempt.rows[0].id,
-      });
+    if (existingAttempt.rowCount > 0) {
+      const attempt = existingAttempt.rows[0];
+      if (attempt.status === 'IN_PROGRESS') {
+        return res.status(409).json({
+          message: "An active attempt already exists",
+          attemptId: attempt.id,
+        });
+      } else {
+        return res.status(403).json({
+          message: "You have already completed this assessment and cannot retake it.",
+        });
+      }
     }
 
     // 4️⃣ Create new attempt
@@ -83,22 +89,48 @@ export async function startAttempt(req: AuthRequest, res: Response) {
 
     const attemptId = attemptResult.rows[0].id;
 
-    // 5️⃣ Fetch assessment questions (NO correct answers)
-    const questionsResult = await pool.query(
-      `SELECT
-         q.id,
-         q.question_text,
-         q.question_type,
-         q.marks,
-         CASE WHEN LOWER(q.question_type) = 'mcq' THEN
-           (SELECT json_agg(json_build_object('id', key, 'text', value))
-            FROM jsonb_each_text(q.options) AS t(key, value))
-         ELSE NULL END AS options
-       FROM questions q
-       WHERE q.assessment_id = $1
-       ORDER BY q.created_at ASC`,
-      [finalAssessmentId]
-    );
+    // 5️⃣ Fetch assessment questions (60 total: 20 per section, randomized consistently for this attempt)
+    let questionsResult;
+    try {
+      questionsResult = await pool.query(
+        `WITH section_questions AS (
+           SELECT
+             q.id,
+             q.question_text,
+             q.question_type,
+             q.marks,
+             q.section,
+             CASE WHEN LOWER(q.question_type) = 'mcq' THEN
+               (SELECT json_agg(json_build_object('id', key, 'text', value))
+                FROM jsonb_each_text(q.options) AS t(key, value))
+             ELSE NULL END AS options,
+             ROW_NUMBER() OVER (PARTITION BY q.section ORDER BY md5(q.id::text || $2::text)) as rn
+           FROM questions q
+           WHERE q.assessment_id = $1
+         )
+         SELECT id, question_text, question_type, marks, section, options
+         FROM section_questions
+         WHERE rn <= 15
+         ORDER BY 
+           CASE 
+             WHEN section = 'Quantitative' THEN 1
+             WHEN section = 'Verbal' THEN 2
+             WHEN section = 'Coding' THEN 3
+             ELSE 4
+           END, rn`,
+        [finalAssessmentId, attemptId]
+      );
+    } catch (dbError: any) {
+      console.error("❌ Database error fetching questions:", dbError);
+      // If section column is missing, fallback to simple query or return specific error
+      if (dbError.code === '42703' && dbError.message.includes('section')) {
+        return res.status(500).json({ 
+          message: "Database schema mismatch: 'section' column missing. Please run the migration.",
+          error: dbError.message 
+        });
+      }
+      throw dbError;
+    }
 
     if (questionsResult.rowCount === 0) {
       return res.status(500).json({
@@ -216,21 +248,34 @@ export async function getQuestions(req: AuthRequest, res: Response) {
 
     const assessmentId = attemptResult.rows[0].assessment_id;
 
-    // 2️⃣ Fetch questions (same as startAttempt but without correct answers)
+    // 2️⃣ Fetch questions (60 total: 20 per section, randomized consistently for this attempt)
     const questionsResult = await pool.query(
-      `SELECT
-         q.id,
-         q.question_text,
-         q.question_type,
-         q.marks,
-         CASE WHEN LOWER(q.question_type) = 'mcq' THEN
-           (SELECT json_agg(json_build_object('id', key, 'text', value))
-            FROM jsonb_each_text(q.options) AS t(key, value))
-         ELSE NULL END AS options
-       FROM questions q
-       WHERE q.assessment_id = $1
-       ORDER BY q.created_at ASC`,
-      [assessmentId]
+      `WITH section_questions AS (
+         SELECT
+           q.id,
+           q.question_text,
+           q.question_type,
+           q.marks,
+           q.section,
+           CASE WHEN LOWER(q.question_type) = 'mcq' THEN
+             (SELECT json_agg(json_build_object('id', key, 'text', value))
+              FROM jsonb_each_text(q.options) AS t(key, value))
+           ELSE NULL END AS options,
+           ROW_NUMBER() OVER (PARTITION BY q.section ORDER BY md5(q.id::text || $2::text)) as rn
+         FROM questions q
+         WHERE q.assessment_id = $1
+       )
+       SELECT id, question_text, question_type, marks, section, options
+       FROM section_questions
+       WHERE rn <= 20
+       ORDER BY 
+         CASE 
+           WHEN section = 'Quantitative' THEN 1
+           WHEN section = 'Verbal' THEN 2
+           WHEN section = 'Coding' THEN 3
+           ELSE 4
+         END, rn`,
+      [assessmentId, attemptId]
     );
 
     return res.json(questionsResult.rows);

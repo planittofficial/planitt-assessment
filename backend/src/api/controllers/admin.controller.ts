@@ -354,12 +354,13 @@ export async function createAssessment(req: Request, res: Response) {
     }
 
     const assessmentCode = code || Math.random().toString(36).substring(2, 8).toUpperCase();
+    const duration = duration_minutes || 60;
 
     const result = await pool.query(
       `INSERT INTO assessments (title, duration_minutes, total_marks, pass_percentage, status, code)
        VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
        RETURNING id, code`,
-      [title, duration_minutes, total_marks || 0, pass_percentage || 40, assessmentCode]
+      [title, duration, total_marks || 0, pass_percentage || 40, assessmentCode]
     );
 
     res.status(201).json({
@@ -412,37 +413,53 @@ export async function addQuestion(req: Request, res: Response) {
   const client = await pool.connect();
   try {
     const { assessmentId } = req.params;
-    let { question_text, question_type, marks, correct_answer, options } = req.body;
+    let { question_text, question_type, marks, correct_answer, options, section } = req.body;
 
     if (!question_text || !question_type || marks === undefined) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // For MCQ, correct_answer should be the key (a, b, c, etc.), not the text
-    if (question_type === "MCQ" && Array.isArray(options) && correct_answer) {
-      const optionsObj: { [key: string]: string } = {};
-      const keys = ['a', 'b', 'c', 'd', 'e', 'f'];
-      options.forEach((opt, index) => {
-        optionsObj[keys[index]] = opt;
-      });
-      options = optionsObj;
-
-      // Find the key for the correct answer text
-      const correctKey = Object.keys(optionsObj).find(key => optionsObj[key] === correct_answer);
-      if (!correctKey) {
-        return res.status(400).json({ message: "Correct answer not found in options" });
+    // For MCQ, correct_answer MUST be the key (a, b, c, etc.)
+    if (question_type === "MCQ" && correct_answer && options) {
+      let optionsObj: { [key: string]: string } = {};
+      
+      if (Array.isArray(options)) {
+        const keys = ['a', 'b', 'c', 'd', 'e', 'f'];
+        options.forEach((opt, index) => {
+          optionsObj[keys[index]] = opt;
+        });
+        options = optionsObj;
+      } else {
+        optionsObj = options;
       }
-      correct_answer = correctKey;
+
+      // If correct_answer is not a key (like 'a'), but a value (like '24'), find the key
+      if (!Object.keys(optionsObj).includes(correct_answer)) {
+        const correctKey = Object.keys(optionsObj).find(key => optionsObj[key] === correct_answer);
+        if (correctKey) {
+          correct_answer = correctKey;
+        } else {
+          return res.status(400).json({ message: "Correct answer not found in options" });
+        }
+      }
     }
 
     await client.query("BEGIN");
 
     // 1. Insert Question
     const questionResult = await client.query(
-      `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options, section)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [assessmentId, question_text, question_type, marks, correct_answer, JSON.stringify(options)]
+      [
+        assessmentId, 
+        question_text, 
+        question_type, 
+        marks, 
+        question_type.toUpperCase() === 'DESCRIPTIVE' ? null : correct_answer, 
+        JSON.stringify(options), 
+        section
+      ]
     );
 
     const questionId = questionResult.rows[0].id;
@@ -487,30 +504,47 @@ export async function bulkAddQuestions(req: Request, res: Response) {
     await client.query("BEGIN");
 
     for (const q of questions) {
-      let { question_text, question_type, marks, correct_answer, options } = q;
+      let { question_text, question_type, marks, correct_answer, options, section } = q;
 
-      // For MCQ, correct_answer should be the key (a, b, c, etc.), not the text
-      if (question_type === "MCQ" && Array.isArray(options) && correct_answer) {
-        const optionsObj: { [key: string]: string } = {};
-        const keys = ['a', 'b', 'c', 'd', 'e', 'f'];
-        options.forEach((opt, index) => {
-          optionsObj[keys[index]] = opt;
-        });
-        options = optionsObj;
-
-        // Find the key for the correct answer text
-        const correctKey = Object.keys(optionsObj).find(key => optionsObj[key] === correct_answer);
-        if (!correctKey) {
-          throw new Error("Correct answer not found in options");
+      // For MCQ, correct_answer MUST be the key (a, b, c, etc.)
+      if (question_type === "MCQ" && correct_answer && options) {
+        let optionsObj: { [key: string]: string } = {};
+        
+        if (Array.isArray(options)) {
+          const keys = ['a', 'b', 'c', 'd', 'e', 'f'];
+          options.forEach((opt, index) => {
+            optionsObj[keys[index]] = opt;
+          });
+          options = optionsObj;
+        } else {
+          optionsObj = options;
         }
-        correct_answer = correctKey;
+
+        // If correct_answer is not a key (like 'a'), but a value (like '24'), find the key
+        if (!Object.keys(optionsObj).includes(correct_answer)) {
+          const correctKey = Object.keys(optionsObj).find(key => optionsObj[key] === correct_answer);
+          if (correctKey) {
+            correct_answer = correctKey;
+          } else {
+            // If still not found, we might have an issue, but we'll try to proceed or throw
+            console.warn(`Warning: Correct answer "${correct_answer}" not found in options for question: ${question_text}`);
+          }
+        }
       }
 
       const questionResult = await client.query(
-        `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options, section)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
-        [assessmentId, question_text, question_type, marks, correct_answer, JSON.stringify(options)]
+        [
+          assessmentId, 
+          question_text, 
+          question_type, 
+          marks, 
+          question_type.toUpperCase() === 'DESCRIPTIVE' ? null : correct_answer, 
+          JSON.stringify(options), 
+          section
+        ]
       );
     }
 
@@ -549,6 +583,7 @@ export async function getAssessmentQuestions(req: Request, res: Response) {
          q.question_type,
          q.marks,
          q.correct_answer,
+         q.section,
          CASE
            WHEN q.question_type = 'mcq' THEN
              (SELECT json_agg(json_build_object('id', key, 'text', value))
@@ -557,7 +592,7 @@ export async function getAssessmentQuestions(req: Request, res: Response) {
          END AS options
        FROM questions q
        WHERE q.assessment_id = $1
-       ORDER BY q.created_at ASC`,
+       ORDER BY q.section ASC, q.created_at ASC`,
       [assessmentId]
     );
 
@@ -603,6 +638,35 @@ export async function deleteQuestion(req: Request, res: Response) {
     res.json({ message: "Question deleted successfully" });
   } catch (error) {
     console.error("❌ deleteQuestion error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * DELETE /api/admin/assessments/:assessmentId/questions
+ * Delete all questions for an assessment
+ */
+export async function deleteAllQuestions(req: Request, res: Response) {
+  try {
+    const { assessmentId } = req.params;
+
+    // 1️⃣ Delete all questions
+    await pool.query(
+      `DELETE FROM questions WHERE assessment_id = $1`,
+      [assessmentId]
+    );
+
+    // 2️⃣ Reset assessment total marks
+    await pool.query(
+      `UPDATE assessments
+       SET total_marks = 0
+       WHERE id = $1`,
+      [assessmentId]
+    );
+
+    res.json({ message: "All questions deleted successfully" });
+  } catch (error) {
+    console.error("❌ deleteAllQuestions error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -768,4 +832,37 @@ export async function getDashboardStats(req: Request, res: Response) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+/**
+ * DELETE /api/admin/candidates/:id
+ */
+export async function deleteCandidate(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM users WHERE id = $1 AND role = 'CANDIDATE'", [id]);
+    res.json({ message: "Candidate deleted successfully" });
+  } catch (error) {
+    console.error("❌ deleteCandidate error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+/**
+ * DELETE /api/admin/candidates/bulk-delete
+ */
+export async function bulkDeleteCandidates(req: Request, res: Response) {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "Invalid or empty ID list" });
+    }
+
+    await pool.query("DELETE FROM users WHERE id = ANY($1) AND role = 'CANDIDATE'", [ids]);
+    res.json({ message: "Candidates deleted successfully" });
+  } catch (error) {
+    console.error("❌ bulkDeleteCandidates error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 

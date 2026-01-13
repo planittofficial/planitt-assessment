@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { Question } from "@/types";
 
 export const getAssessments = () => {
   return apiFetch("/api/admin/assessments");
@@ -99,7 +100,7 @@ export const addQuestion = (
 
 export const bulkAddQuestions = (
   assessmentId: string | number,
-  questions: any[]
+  questions: Partial<Question>[]
 ) => {
   return apiFetch(`/api/admin/assessments/${assessmentId}/questions/bulk`, {
     method: "POST",
@@ -109,6 +110,12 @@ export const bulkAddQuestions = (
 
 export const deleteQuestion = (assessmentId: string | number, questionId: string | number) => {
   return apiFetch(`/api/admin/assessments/${assessmentId}/questions/${questionId}`, {
+    method: "DELETE",
+  });
+};
+
+export const deleteAllQuestions = (assessmentId: string | number) => {
+  return apiFetch(`/api/admin/assessments/${assessmentId}/questions`, {
     method: "DELETE",
   });
 };
@@ -128,6 +135,19 @@ export const bulkAddCandidates = (candidates: { email: string; full_name?: strin
   return apiFetch("/api/admin/candidates/bulk", {
     method: "POST",
     body: JSON.stringify({ candidates }),
+  });
+};
+
+export const deleteCandidate = (id: string | number) => {
+  return apiFetch(`/api/admin/candidates/${id}`, {
+    method: "DELETE",
+  });
+};
+
+export const bulkDeleteCandidates = (ids: (string | number)[]) => {
+  return apiFetch("/api/admin/candidates/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
   });
 };
 

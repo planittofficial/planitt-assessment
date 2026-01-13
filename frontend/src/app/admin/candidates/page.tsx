@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getCandidates, addCandidate, bulkAddCandidates } from "@/services/admin.service";
+import { getCandidates, addCandidate, bulkAddCandidates, deleteCandidate, bulkDeleteCandidates } from "@/services/admin.service";
 import Link from "next/link";
+import { Candidate } from "@/types";
 
 export default function CandidatesPage() {
-  const [candidates, setCandidates] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<(Candidate & { created_at: string })[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -38,9 +40,10 @@ export default function CandidatesPage() {
       setFullName("");
       await loadCandidates();
       alert("Candidate added successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add candidate", err);
-      alert(err.message || "Failed to add candidate");
+      const message = err instanceof Error ? err.message : "Failed to add candidate";
+      alert(message);
     } finally {
       setAdding(false);
     }
@@ -93,9 +96,10 @@ export default function CandidatesPage() {
         const res = await bulkAddCandidates(parsedCandidates);
         alert(`Bulk upload completed! Added: ${res.insertedCount}, Skipped (already exists): ${res.skippedCount}`);
         await loadCandidates();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to upload CSV", err);
-        alert(err.message || "Failed to upload CSV");
+        const message = err instanceof Error ? err.message : "Failed to upload CSV";
+        alert(message);
       } finally {
         setUploading(false);
         // Clear input
@@ -103,6 +107,47 @@ export default function CandidatesPage() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleDeleteIndividual = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this candidate?")) return;
+    try {
+      await deleteCandidate(id);
+      setSelectedIds(selectedIds.filter(sid => sid !== id));
+      await loadCandidates();
+    } catch (err: unknown) {
+      console.error("Failed to delete candidate", err);
+      alert("Failed to delete candidate");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.length} candidates?`)) return;
+    try {
+      await bulkDeleteCandidates(selectedIds);
+      setSelectedIds([]);
+      await loadCandidates();
+    } catch (err: unknown) {
+      console.error("Failed to delete candidates", err);
+      alert("Failed to delete candidates");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === candidates.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(candidates.map(c => c.id));
+    }
+  };
+
+  const toggleSelectOne = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(sid => sid !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
   };
 
   if (loading) {
@@ -186,30 +231,73 @@ export default function CandidatesPage() {
           </div>
         </div>
 
-        {/* Candidates List */}
+        {/* Candidates List Header with Bulk Actions */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-3">
+            Candidates 
+            <span className="text-sm bg-neutral-800 text-gray-400 px-3 py-1 rounded-full">{candidates.length}</span>
+          </h2>
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+            >
+              🗑️ Delete Selected ({selectedIds.length})
+            </button>
+          )}
+        </div>
+
         <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-neutral-800 border-b border-neutral-700 text-gray-400 text-xs uppercase tracking-wider">
-                <th className="px-6 py-4 font-bold">Email</th>
-                <th className="px-6 py-4 font-bold">Full Name</th>
-                <th className="px-6 py-4 font-bold">Added On</th>
+              <tr className="bg-neutral-800 border-b border-neutral-700 text-gray-400 text-[10px] uppercase tracking-widest font-black">
+                <th className="px-6 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={candidates.length > 0 && selectedIds.length === candidates.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-neutral-900"
+                  />
+                </th>
+                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Full Name</th>
+                <th className="px-6 py-4">Added On</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800">
               {candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
                     No candidates found.
                   </td>
                 </tr>
               ) : (
                 candidates.map((c) => (
-                  <tr key={c.id} className="hover:bg-neutral-800/50 transition-colors">
-                    <td className="px-6 py-4 text-white font-medium">{c.email}</td>
-                    <td className="px-6 py-4 text-gray-300">{c.full_name || "-"}</td>
-                    <td className="px-6 py-4 text-gray-400 text-sm">
+                  <tr key={c.id} className={`hover:bg-neutral-800/30 transition-colors ${selectedIds.includes(c.id) ? 'bg-yellow-500/5' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(c.id)}
+                        onChange={() => toggleSelectOne(c.id)}
+                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-neutral-900"
+                      />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-white">{c.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-400">{c.full_name || "-"}</td>
+                    <td className="px-6 py-4 text-neutral-500 text-sm font-mono">
                       {new Date(c.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => handleDeleteIndividual(c.id)}
+                        className="text-red-500/50 hover:text-red-500 transition-colors p-2"
+                        title="Delete Candidate"
+                      >
+                        🗑️
+                      </button>
                     </td>
                   </tr>
                 ))

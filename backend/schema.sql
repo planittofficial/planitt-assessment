@@ -31,6 +31,7 @@ CREATE TABLE questions (
     question_type VARCHAR(20) CHECK (question_type IN ('mcq', 'descriptive')) NOT NULL,
     options JSONB, -- Stores MCQ options: {"a": "...", "b": "..."}
     correct_answer TEXT, -- Choice key for MCQ, null for descriptive
+    section VARCHAR(50) CHECK (section IN ('Quantitative', 'Coding', 'Verbal', 'Logical')),
     marks DECIMAL(5, 2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

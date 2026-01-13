@@ -37,7 +37,7 @@ export default function LoginPage() {
         className="bg-neutral-900 p-8 rounded-xl w-full max-w-md border border-neutral-800"
       >
         <h1 className="text-2xl font-bold mb-6 text-center">
-          Assessment Login
+          Start Assessment
         </h1>
 
         {error && (
@@ -59,7 +59,7 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full bg-yellow-500 text-black py-3 rounded font-semibold hover:bg-yellow-400 transition"
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Entering..." : "Enter assessment"}
         </button>
       </form>
     </div>

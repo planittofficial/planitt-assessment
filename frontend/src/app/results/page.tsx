@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import Link from "next/link";
 
 interface AssessmentResult {
   attempt_id: string;
@@ -21,9 +22,21 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-8">
-      <h1 className="text-2xl font-bold mb-6">My Results</h1>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">My Results</h1>
+          <Link 
+            href="/assessment/start" 
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Assessment
+          </Link>
+        </div>
 
-      {results.length === 0 ? (
+        {results.length === 0 ? (
         <p className="text-gray-500">No results published yet.</p>
       ) : (
         results.map((r) => (
@@ -55,6 +68,7 @@ export default function ResultsPage() {
           </div>
         ))
       )}
+      </div>
     </div>
   );
 }

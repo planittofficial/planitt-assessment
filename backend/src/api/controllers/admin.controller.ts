@@ -827,9 +827,9 @@ export async function getDashboardStats(req: Request, res: Response) {
       assessmentStats: assessmentStatsResult.rows,
       recentResults: recentResultsResult.rows
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ getDashboardStats error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: error.message || "Internal server error" });
   }
 }
 

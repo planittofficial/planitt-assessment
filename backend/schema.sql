@@ -45,7 +45,8 @@ CREATE TABLE attempts (
     started_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     submitted_at TIMESTAMP WITH TIME ZONE,
     auto_submitted BOOLEAN DEFAULT false,
-    final_score DECIMAL(10, 2)
+    final_score DECIMAL(10, 2),
+    is_published BOOLEAN DEFAULT false
 );
 
 -- Candidate Answers

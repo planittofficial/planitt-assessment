@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-dotenv.config({ path: path.resolve(__dirname, "backend/.env") });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 import pool from "./src/config/db";
 
 async function checkAttemptsSchema() {

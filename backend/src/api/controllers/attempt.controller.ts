@@ -25,7 +25,7 @@ export async function startAttempt(req: AuthRequest, res: Response) {
     console.log(`DEBUG: startAttempt - assessmentId: ${assessmentId}, assessmentCode: ${assessmentCode}`);
     if (assessmentId) {
       const result = await pool.query(
-        `SELECT id, duration_minutes, code FROM assessments WHERE id = $1 AND status = 'ACTIVE'`,
+        `SELECT id, duration_minutes, code FROM assessments WHERE id = $1 AND is_active = true`,
         [assessmentId]
       );
       console.log(`DEBUG: startAttempt - Query by ID result rowCount: ${result.rowCount}`);
@@ -35,7 +35,7 @@ export async function startAttempt(req: AuthRequest, res: Response) {
       assessment = result.rows[0];
     } else {
       const result = await pool.query(
-        `SELECT id, duration_minutes, code FROM assessments WHERE code = $1 AND status = 'ACTIVE'`,
+        `SELECT id, duration_minutes, code FROM assessments WHERE code = $1 AND is_active = true`,
         [assessmentCode.toUpperCase()]
       );
       console.log(`DEBUG: startAttempt - Query by code result rowCount: ${result.rowCount}`);
@@ -59,10 +59,9 @@ export async function startAttempt(req: AuthRequest, res: Response) {
          AND assessment_id = $2`,
       [userId, finalAssessmentId]
     );
-
     if (existingAttempt.rowCount > 0) {
       const attempt = existingAttempt.rows[0];
-      if (attempt.status === 'IN_PROGRESS') {
+      if (attempt.status === 'started') {
         return res.status(409).json({
           message: "An active attempt already exists",
           attemptId: attempt.id,
@@ -80,9 +79,9 @@ export async function startAttempt(req: AuthRequest, res: Response) {
          user_id,
          assessment_id,
          status,
-         start_time
+         started_at
        )
-       VALUES ($1, $2, 'IN_PROGRESS', NOW())
+       VALUES ($1, $2, 'started', NOW())
        RETURNING id`,
       [userId, finalAssessmentId]
     );
@@ -183,7 +182,7 @@ export async function submitAttempt(req: AuthRequest, res: Response) {
     const attempt = attemptResult.rows[0];
 
     // 2️⃣ Ensure attempt is active
-    if (attempt.status !== "IN_PROGRESS") {
+    if (attempt.status !== "started") {
       return res.status(409).json({
         message: "Attempt already submitted",
       });
@@ -192,9 +191,8 @@ export async function submitAttempt(req: AuthRequest, res: Response) {
     // 3️⃣ Submit attempt
     await pool.query(
       `UPDATE attempts
-       SET status = 'SUBMITTED',
-           end_time = NOW(),
-           is_published = false
+       SET status = 'completed',
+           submitted_at = NOW()
        WHERE id = $1`,
       [attemptId]
     );
@@ -307,7 +305,7 @@ export async function saveAnswer(req: AuthRequest, res: Response) {
     const attemptResult = await pool.query(
       `SELECT id
        FROM attempts
-       WHERE id = $1 AND user_id = $2 AND status = 'IN_PROGRESS'`,
+       WHERE id = $1 AND user_id = $2 AND status = 'started'`,
       [attemptId, userId]
     );
 

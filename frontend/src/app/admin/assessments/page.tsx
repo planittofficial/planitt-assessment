@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAssessments, publishAllResults } from "@/services/admin.service";
 import Link from "next/link";
-import { notifyError, notifySuccess } from "@/lib/notify";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 
 export default function AdminAssessmentsPage() {
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -28,8 +28,12 @@ export default function AdminAssessmentsPage() {
 
     setPublishingId(assessmentId);
     try {
-      await publishAllResults(assessmentId);
-      notifySuccess("Results published successfully.");
+      const res = await publishAllResults(assessmentId);
+      if ((res?.count ?? 0) > 0) {
+        notifySuccess(`${res.count} result(s) published successfully.`);
+      } else {
+        notifyInfo("No finalized unpublished results found to publish.");
+      }
     } catch (err) {
       console.error("Failed to publish results", err);
       notifyError("Failed to publish results");
@@ -41,7 +45,10 @@ export default function AdminAssessmentsPage() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-8">
       <div className="max-w-6xl mx-auto">
-        <Link href="/admin" className="text-gray-400 hover:text-white mb-4 inline-block">
+        <Link
+          href="/admin"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+        >
           ← Back to Dashboard
         </Link>
         <div className="flex justify-between items-center mb-8">

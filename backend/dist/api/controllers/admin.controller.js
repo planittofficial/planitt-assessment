@@ -462,7 +462,7 @@ async function publishAllResults(req, res) {
       SET is_published = true
       WHERE assessment_id = $1
         AND result IS NOT NULL
-        AND is_published = false
+        AND COALESCE(is_published, false) = false
       RETURNING id
       `, [assessmentId]);
         res.json({

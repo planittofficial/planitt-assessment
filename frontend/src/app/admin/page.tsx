@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAdmin } from "@/hooks/useAdmin";
 import { getDashboardStats } from "@/services/admin.service";
 import { notifyInfo } from "@/lib/notify";
+import CandidateProfileMenu from "@/components/CandidateProfileMenu";
 
 export default function AdminPage() {
   const { loading: adminLoading } = useAdmin();
@@ -77,7 +78,7 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <div className="flex gap-4">
+          <div className="flex items-center gap-4">
             <Link
               href="/admin/assessments"
               className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-yellow-500/10"
@@ -90,6 +91,7 @@ export default function AdminPage() {
             >
               Candidates
             </Link>
+            <CandidateProfileMenu inline />
           </div>
         </div>
 

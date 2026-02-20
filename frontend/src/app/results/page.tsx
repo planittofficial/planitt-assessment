@@ -10,8 +10,15 @@ interface AssessmentResult {
   final_score: number | null;
   total_marks: number;
   result: string | null;
-  is_published: boolean;
+  is_published: boolean | string | number | null;
   submitted_at: string | null;
+}
+
+function isPublishedFlag(value: AssessmentResult["is_published"]) {
+  if (value === true) return true;
+  if (value === 1) return true;
+  const normalized = String(value ?? "").toLowerCase();
+  return normalized === "true" || normalized === "t" || normalized === "1";
 }
 
 export default function ResultsPage() {
@@ -69,7 +76,9 @@ export default function ResultsPage() {
       ) : results.length === 0 ? (
         <p className="text-gray-500">No assessments attempted yet.</p>
       ) : (
-        results.map((r) => (
+        results.map((r) => {
+          const published = isPublishedFlag(r.is_published);
+          return (
           <div
             key={r.attempt_id}
             className="p-6 bg-neutral-900 border border-neutral-800 rounded-xl mb-4 shadow-lg flex justify-between items-center"
@@ -86,7 +95,7 @@ export default function ResultsPage() {
               <div className="flex flex-col items-end">
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-0.5">Score</p>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {r.is_published
+                  {published
                     ? (
                         <>
                           {r.final_score ?? 0} <span className="text-sm text-gray-500 font-normal">/ {r.total_marks}</span>
@@ -95,7 +104,7 @@ export default function ResultsPage() {
                     : "Not Released"}
                 </p>
               </div>
-              {r.is_published ? (
+              {published ? (
                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                   r.result === 'PASS' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                 }`}>
@@ -108,7 +117,8 @@ export default function ResultsPage() {
               )}
             </div>
           </div>
-        ))
+          );
+        })
       )}
       </div>
     </div>

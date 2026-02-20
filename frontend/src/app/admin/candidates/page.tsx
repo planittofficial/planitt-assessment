@@ -162,7 +162,10 @@ export default function CandidatesPage() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/admin" className="text-gray-400 hover:text-white mb-4 inline-block">
+        <Link
+          href="/admin"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+        >
           ← Back to Dashboard
         </Link>
         <h1 className="text-3xl font-bold mb-8 text-white">Manage Candidates</h1>

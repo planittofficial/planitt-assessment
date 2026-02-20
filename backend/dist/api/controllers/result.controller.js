@@ -14,10 +14,10 @@ async function getMyResults(req, res) {
       SELECT
         a.id AS attempt_id,
         ass.title,
-        CASE WHEN a.is_published THEN a.final_score ELSE NULL END AS final_score,
+        CASE WHEN COALESCE(a.is_published, false) THEN a.final_score ELSE NULL END AS final_score,
         ass.total_marks,
-        CASE WHEN a.is_published THEN a.result ELSE NULL END AS result,
-        a.is_published,
+        CASE WHEN COALESCE(a.is_published, false) THEN a.result ELSE NULL END AS result,
+        COALESCE(a.is_published, false) AS is_published,
         a.${submittedColumn} AS submitted_at
       FROM attempts a
       JOIN assessments ass ON ass.id = a.assessment_id

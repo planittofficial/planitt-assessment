@@ -17,7 +17,7 @@ async function login(req, res) {
         return res.status(400).json({ message: "Email is required" });
     }
     // 1️⃣ Find user
-    const userResult = await db_1.default.query("SELECT id, role FROM users WHERE email = $1", [email]);
+    const userResult = await db_1.default.query("SELECT id, role, email, full_name FROM users WHERE email = $1", [email]);
     if (userResult.rowCount === 0) {
         return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -39,6 +39,8 @@ async function login(req, res) {
     return res.json({
         message: "Login successful",
         role: user.role,
+        email: user.email,
+        full_name: user.full_name,
     });
 }
 /**
@@ -48,8 +50,17 @@ async function me(req, res) {
     if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
     }
+    const userResult = await db_1.default.query(`SELECT id, role, email, full_name
+     FROM users
+     WHERE id = $1`, [req.user.userId]);
+    if (userResult.rowCount === 0) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = userResult.rows[0];
     return res.json({
-        userId: req.user.userId,
-        role: req.user.role,
+        userId: user.id,
+        role: user.role,
+        email: user.email,
+        full_name: user.full_name,
     });
 }

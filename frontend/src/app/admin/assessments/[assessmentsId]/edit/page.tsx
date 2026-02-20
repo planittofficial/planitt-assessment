@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, deleteAllQuestions, getAssessmentById, updateAssessment } from "@/services/admin.service";
 import Link from "next/link";
 import { Question, Assessment } from "@/types";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 type ParsedQuestion = {
   question_text: string;
@@ -29,7 +30,6 @@ export default function EditAssessmentPage() {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
   const [smartPasteText, setSmartPasteText] = useState("");
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
-  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
@@ -76,10 +76,10 @@ export default function EditAssessmentPage() {
         pass_percentage: assessment.pass_percentage,
         status: normalizedStatus ? "ACTIVE" : "INACTIVE",
       });
-      setNotice({ type: "success", message: "Criteria updated successfully." });
+      notifySuccess("Criteria updated successfully.");
     } catch (err) {
       console.error(err);
-      setNotice({ type: "error", message: "Failed to update criteria." });
+      notifyError("Failed to update criteria.");
     } finally {
       setUpdatingCriteria(false);
     }
@@ -154,11 +154,11 @@ export default function EditAssessmentPage() {
           setParsedQuestions(json);
           setShowSmartPaste(true);
         } else {
-          setNotice({ type: "error", message: "Invalid JSON format. Expected an array of questions." });
+          notifyError("Invalid JSON format. Expected an array of questions.");
         }
       } catch (err) {
         console.error(err);
-        setNotice({ type: "error", message: "Failed to parse JSON file." });
+        notifyError("Failed to parse JSON file.");
       }
     };
     reader.readAsText(file);
@@ -173,11 +173,11 @@ export default function EditAssessmentPage() {
       setParsedQuestions([]);
       setSmartPasteText("");
       setShowSmartPaste(false);
-      setNotice({ type: "success", message: "Questions uploaded successfully." });
+      notifySuccess("Questions uploaded successfully.");
       loadQuestions();
     } catch (err) {
       console.error(err);
-      setNotice({ type: "error", message: "Bulk upload failed." });
+      notifyError("Bulk upload failed.");
     } finally {
       setSubmitting(false);
     }
@@ -202,11 +202,11 @@ export default function EditAssessmentPage() {
         options: ["", "", "", ""],
         section: "Quantitative",
       });
-      setNotice({ type: "success", message: "Question added successfully." });
+      notifySuccess("Question added successfully.");
       loadQuestions();
     } catch (err) {
       console.error(err);
-      setNotice({ type: "error", message: "Failed to add question." });
+      notifyError("Failed to add question.");
     } finally {
       setSubmitting(false);
     }
@@ -223,11 +223,11 @@ export default function EditAssessmentPage() {
     if (!confirm("Are you sure you want to delete this question?")) return;
     try {
       await deleteQuestion(assessmentId, questionId);
-      setNotice({ type: "success", message: "Question deleted successfully." });
+      notifySuccess("Question deleted successfully.");
       loadQuestions();
     } catch (err) {
       console.error(err);
-      setNotice({ type: "error", message: "Failed to delete question." });
+      notifyError("Failed to delete question.");
     }
   }
 
@@ -236,18 +236,21 @@ export default function EditAssessmentPage() {
     if (!confirm("CRITICAL: This will delete ALL questions in this assessment. Are you sure?")) return;
     try {
       await deleteAllQuestions(assessmentId);
-      setNotice({ type: "success", message: "All questions deleted successfully." });
+      notifySuccess("All questions deleted successfully.");
       loadQuestions();
     } catch (err) {
       console.error(err);
-      setNotice({ type: "error", message: "Failed to delete all questions." });
+      notifyError("Failed to delete all questions.");
     }
   }
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href="/admin" className="text-gray-400 hover:text-white mb-4 inline-block">
+        <Link
+          href="/admin"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+        >
           ← Back to Dashboard
         </Link>
         <div className="mb-6">
@@ -271,18 +274,6 @@ export default function EditAssessmentPage() {
           </div>
         </div>
 
-        {notice && (
-          <div
-            className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
-              notice.type === "success"
-                ? "border-green-500/30 bg-green-500/10 text-green-300"
-                : "border-red-500/30 bg-red-500/10 text-red-300"
-            }`}
-          >
-            {notice.message}
-          </div>
-        )}
-        
         {assessment && (
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-8 shadow-xl">
             <h2 className="text-xl font-bold mb-6 text-yellow-500 flex items-center gap-2">

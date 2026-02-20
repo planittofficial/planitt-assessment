@@ -1,6 +1,6 @@
 import pool from "../config/db";
 
-export async function checkAutoSubmit(attemptId: number) {
+export async function checkAutoSubmit(attemptId: string) {
   const result = await pool.query(
     `SELECT violation_type, COUNT(*) as count
      FROM violations

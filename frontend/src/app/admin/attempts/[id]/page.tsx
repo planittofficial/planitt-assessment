@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getDescriptiveAnswers, gradeDescriptiveAnswer, getAttemptSummary } from "@/services/admin.service";
+import { notifyError } from "@/lib/notify";
 
 export default function AttemptReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ export default function AttemptReviewPage() {
       setAnswers(prev => prev.map(a => a.id === answerId ? { ...a, is_graded: true, marks_obtained: marks } : a));
     } catch (err) {
       console.error(err);
-      alert("Failed to grade");
+      notifyError("Failed to grade");
     }
   }
 

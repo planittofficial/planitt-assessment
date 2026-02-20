@@ -1,25 +1,27 @@
 import { Request, Response } from "express";
 import pool from "../../config/db";
 import { AuthRequest } from "../middlewares/auth.middleware";
+import { getAttemptsSubmittedColumn } from "../../utils/attempt-schema";
 
 export async function getMyResults(req: AuthRequest, res: Response) {
   try {
     const userId = req.user!.userId;
+    const submittedColumn = await getAttemptsSubmittedColumn();
 
     const result = await pool.query(
       `
       SELECT
         a.id AS attempt_id,
         ass.title,
-        a.final_score,
+        CASE WHEN a.is_published THEN a.final_score ELSE NULL END AS final_score,
         ass.total_marks,
-        a.result,
-        a.end_time
+        CASE WHEN a.is_published THEN a.result ELSE NULL END AS result,
+        a.is_published,
+        a.${submittedColumn} AS submitted_at
       FROM attempts a
       JOIN assessments ass ON ass.id = a.assessment_id
       WHERE a.user_id = $1
-        AND a.is_published = true
-      ORDER BY a.end_time DESC
+      ORDER BY a.${submittedColumn} DESC
       `,
       [userId]
     );

@@ -1,16 +1,202 @@
 import { Request, Response } from "express";
 import pool from "../../config/db";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { calculateFinalScore } from "../../services/scoring.service";
 import { finalizeAttemptIfComplete } from "../../services/finalizeAttempt.service";
+import { isUuid } from "../../utils/validation";
+
+let hasIsActiveColumnCache: boolean | null = null;
+let attemptsStartedColumnCache: "started_at" | "start_time" | null = null;
+let attemptsSubmittedColumnCache: "submitted_at" | "end_time" | null = null;
+let answersTextColumnCache: "answer_text" | "answer" | null = null;
+
+async function hasIsActiveColumn() {
+  if (hasIsActiveColumnCache !== null) {
+    return hasIsActiveColumnCache;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = current_schema()
+       AND table_name = 'assessments'
+       AND column_name = 'is_active'
+     LIMIT 1`
+  );
+
+  hasIsActiveColumnCache = (result.rowCount ?? 0) > 0;
+  return hasIsActiveColumnCache;
+}
+
+async function getAttemptsStartedColumn() {
+  if (attemptsStartedColumnCache) {
+    return attemptsStartedColumnCache;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = current_schema()
+       AND table_name = 'attempts'
+       AND column_name = 'started_at'
+     LIMIT 1`
+  );
+
+  attemptsStartedColumnCache = (result.rowCount ?? 0) > 0 ? "started_at" : "start_time";
+  return attemptsStartedColumnCache;
+}
+
+async function getAttemptsSubmittedColumn() {
+  if (attemptsSubmittedColumnCache) {
+    return attemptsSubmittedColumnCache;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_schema = current_schema()
+       AND table_name = 'attempts'
+       AND column_name = 'submitted_at'
+     LIMIT 1`
+  );
+
+  attemptsSubmittedColumnCache = (result.rowCount ?? 0) > 0 ? "submitted_at" : "end_time";
+  return attemptsSubmittedColumnCache;
+}
+
+async function getAnswersTextColumn() {
+  if (answersTextColumnCache) {
+    return answersTextColumnCache;
+  }
+
+  const result = await pool.query(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM pg_attribute
+       WHERE attrelid = to_regclass('answers')
+         AND attname = 'answer_text'
+         AND NOT attisdropped
+     ) AS has_answer_text`
+  );
+
+  answersTextColumnCache = result.rows[0]?.has_answer_text ? "answer_text" : "answer";
+  return answersTextColumnCache;
+}
+
+function requireUuidParam(res: Response, name: string, value: unknown) {
+  if (!isUuid(value)) {
+    res.status(400).json({ message: `Invalid ${name}` });
+    return false;
+  }
+
+  return true;
+}
+
+async function insertQuestionWithCompatibility(
+  client: any,
+  payload: {
+    assessmentId: string;
+    questionText: string;
+    questionType: string;
+    marks: number;
+    correctAnswer: string | null;
+    options: unknown;
+    section: string;
+  }
+) {
+  const sql = `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options, section)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)
+               RETURNING id`;
+
+  const lowerType = payload.questionType.toLowerCase();
+  const upperType = payload.questionType.toUpperCase();
+  const optionsJson =
+    typeof payload.options === "undefined" ? null : JSON.stringify(payload.options);
+  const savepoint = "insert_question_sp";
+
+  await client.query(`SAVEPOINT ${savepoint}`);
+  try {
+    const result = await client.query(sql, [
+      payload.assessmentId,
+      payload.questionText,
+      lowerType,
+      payload.marks,
+      lowerType === "descriptive" ? null : payload.correctAnswer,
+      optionsJson,
+      payload.section,
+    ]);
+    await client.query(`RELEASE SAVEPOINT ${savepoint}`);
+    return result;
+  } catch (error: any) {
+    // Some legacy DBs enforce uppercase enum/check values for question_type.
+    if (error?.code === "23514") {
+      await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+      try {
+        const result = await client.query(sql, [
+          payload.assessmentId,
+          payload.questionText,
+          upperType,
+          payload.marks,
+          upperType === "DESCRIPTIVE" ? null : payload.correctAnswer,
+          optionsJson,
+          payload.section,
+        ]);
+        await client.query(`RELEASE SAVEPOINT ${savepoint}`);
+        return result;
+      } catch (retryError) {
+        await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+        await client.query(`RELEASE SAVEPOINT ${savepoint}`);
+        throw retryError;
+      }
+    }
+    await client.query(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+    await client.query(`RELEASE SAVEPOINT ${savepoint}`);
+    throw error;
+  }
+}
+
+const ALLOWED_SECTIONS = new Set(["Quantitative", "Verbal", "Coding", "Logical"]);
+
+function normalizeQuestionType(value: unknown): "mcq" | "descriptive" | null {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "mcq" || normalized === "descriptive") {
+    return normalized;
+  }
+  return null;
+}
+
+function normalizeSection(value: unknown): string | null {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "quantitative") return "Quantitative";
+  if (normalized === "verbal") return "Verbal";
+  if (normalized === "coding") return "Coding";
+  if (normalized === "logical") return "Logical";
+  return null;
+}
+
+async function ensureAssessmentExists(client: any, assessmentId: string) {
+  const result = await client.query(
+    `SELECT 1 FROM assessments WHERE id = $1 LIMIT 1`,
+    [assessmentId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+async function safeRollback(client: any) {
+  try {
+    await client.query("ROLLBACK");
+  } catch (rollbackError) {
+    console.error("❌ rollback error:", rollbackError);
+  }
+}
 
 /**
  * GET /api/admin/assessments
  * List all assessments
  */
 export async function getAssessments(req: Request, res: Response) {
+  const useIsActive = await hasIsActiveColumn();
   const result = await pool.query(
-    `SELECT id, title, status, code, created_at
+    `SELECT id, title, ${useIsActive ? "is_active" : "status"} AS status, code, created_at
      FROM assessments
      ORDER BY created_at DESC`
   );
@@ -23,9 +209,13 @@ export async function getAssessments(req: Request, res: Response) {
  */
 export async function getAssessmentById(req: Request, res: Response) {
   try {
+    const useIsActive = await hasIsActiveColumn();
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
     const result = await pool.query(
-      `SELECT id, title, duration_minutes, pass_percentage, status, code, total_marks
+      `SELECT id, title, duration_minutes, pass_percentage, ${useIsActive ? "is_active" : "status"} AS status, code, total_marks
        FROM assessments
        WHERE id = $1`,
       [assessmentId]
@@ -51,13 +241,18 @@ export async function getAttemptsByAssessment(
   res: Response
 ) {
   try {
-    const assessmentId = Number(req.params.assessmentId);
+    const startedColumn = await getAttemptsStartedColumn();
+    const submittedColumn = await getAttemptsSubmittedColumn();
+    const assessmentId = req.params.assessmentId;
 
     // 🔒 HARD GUARD
-    if (!assessmentId || Number.isNaN(assessmentId)) {
+    if (!assessmentId) {
       return res.status(400).json({
         message: "Invalid or missing assessmentId",
       });
+    }
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
     }
 
     const result = await pool.query(
@@ -66,15 +261,15 @@ export async function getAttemptsByAssessment(
          a.user_id,
          u.email,
          a.status,
-         a.start_time,
-         a.end_time,
+         a.${startedColumn} AS started_at,
+         a.${submittedColumn} AS submitted_at,
          a.final_score,
          a.result,
          a.is_published
        FROM attempts a
        JOIN users u ON u.id = a.user_id
        WHERE a.assessment_id = $1
-       ORDER BY a.start_time DESC`,
+       ORDER BY a.${startedColumn} DESC`,
       [assessmentId]
     );
 
@@ -91,12 +286,15 @@ export async function getAttemptsByAssessment(
  */
 export async function getViolationsByAttempt(req: Request, res: Response) {
   const { attemptId } = req.params;
+  if (!requireUuidParam(res, "attemptId", attemptId)) {
+    return;
+  }
 
   const result = await pool.query(
-    `SELECT violation_type, created_at
+    `SELECT violation_type, timestamp
 FROM violations
 WHERE attempt_id = $1
-ORDER BY created_at ASC
+ORDER BY timestamp ASC
 `,
     [attemptId]
   );
@@ -109,15 +307,20 @@ ORDER BY created_at ASC
  * Attempt summary
  */
 export async function getAttemptSummary(req: Request, res: Response) {
+  const startedColumn = await getAttemptsStartedColumn();
+  const submittedColumn = await getAttemptsSubmittedColumn();
   const { attemptId } = req.params;
+  if (!requireUuidParam(res, "attemptId", attemptId)) {
+    return;
+  }
 
   const result = await pool.query(
     `SELECT 
         a.id,
         u.email,
         a.status,
-        a.start_time,
-        a.end_time,
+        a.${startedColumn} AS started_at,
+        a.${submittedColumn} AS submitted_at,
         COUNT(v.id) AS violations
      FROM attempts a
      JOIN users u ON u.id = a.user_id
@@ -140,7 +343,13 @@ export async function getAttemptSummary(req: Request, res: Response) {
  */
 export async function getAttemptDetails(req: Request, res: Response) {
   try {
+    const startedColumn = await getAttemptsStartedColumn();
+    const submittedColumn = await getAttemptsSubmittedColumn();
+    const answerColumn = await getAnswersTextColumn();
     const { attemptId } = req.params;
+    if (!requireUuidParam(res, "attemptId", attemptId)) {
+      return;
+    }
 
     // 1. Get Attempt Summary
     const attemptResult = await pool.query(
@@ -148,8 +357,8 @@ export async function getAttemptDetails(req: Request, res: Response) {
           a.id,
           u.email,
           a.status,
-          a.start_time,
-          a.end_time,
+          a.${startedColumn} AS started_at,
+          a.${submittedColumn} AS submitted_at,
           a.final_score,
           a.result,
           ass.title as assessment_title,
@@ -172,7 +381,7 @@ export async function getAttemptDetails(req: Request, res: Response) {
           q.question_text,
           q.question_type,
           q.correct_answer,
-          ans.answer as user_answer,
+          ans.${answerColumn} as user_answer,
           ans.marks_obtained,
           q.marks as max_marks,
           ans.is_graded
@@ -194,18 +403,22 @@ export async function getAttemptDetails(req: Request, res: Response) {
 }
 export async function getDescriptiveAnswers(req: Request, res: Response) {
   const { attemptId } = req.params;
+  if (!requireUuidParam(res, "attemptId", attemptId)) {
+    return;
+  }
+  const answerColumn = await getAnswersTextColumn();
 
   const result = await pool.query(
     `
     SELECT 
       a.id,
       q.question_text,
-      a.answer,
+      a.${answerColumn} as answer_text,
       q.marks
     FROM answers a
     JOIN questions q ON q.id = a.question_id
     WHERE a.attempt_id = $1
-      AND q.question_type = 'DESCRIPTIVE'
+      AND LOWER(q.question_type) = 'descriptive'
     `,
     [attemptId]
   );
@@ -223,6 +436,9 @@ export async function gradeDescriptiveAnswer(req: Request, res: Response) {
 
     if (!answerId || marks === undefined) {
       return res.status(400).json({ message: "answerId and marks are required" });
+    }
+    if (!requireUuidParam(res, "answerId", answerId)) {
+      return;
     }
 
     // 1️⃣ Grade the answer
@@ -260,6 +476,9 @@ export async function gradeDescriptiveAnswer(req: Request, res: Response) {
 export async function publishResult(req: Request, res: Response) {
   try {
     const { attemptId } = req.params;
+    if (!requireUuidParam(res, "attemptId", attemptId)) {
+      return;
+    }
 
     // 1️⃣ Ensure attempt exists & is finalized
     const attempt = await pool.query(
@@ -310,12 +529,15 @@ export async function publishResult(req: Request, res: Response) {
 
 export async function publishAllResults(req: Request, res: Response) {
   try {
-    const assessmentId = Number(req.params.assessmentId);
+    const assessmentId = req.params.assessmentId;
 
-    if (!assessmentId || Number.isNaN(assessmentId)) {
+    if (!assessmentId) {
       return res.status(400).json({
         message: "Invalid or missing assessmentId",
       });
+    }
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
     }
 
     // Update all attempts for this assessment that are finalized (have a result) and not yet published
@@ -347,6 +569,7 @@ export async function publishAllResults(req: Request, res: Response) {
  */
 export async function createAssessment(req: Request, res: Response) {
   try {
+    const useIsActive = await hasIsActiveColumn();
     const { title, duration_minutes, total_marks, pass_percentage, code } = req.body;
 
     if (!title || !duration_minutes) {
@@ -356,12 +579,19 @@ export async function createAssessment(req: Request, res: Response) {
     const assessmentCode = code || Math.random().toString(36).substring(2, 8).toUpperCase();
     const duration = duration_minutes || 60;
 
-    const result = await pool.query(
-      `INSERT INTO assessments (title, duration_minutes, total_marks, pass_percentage, status, code)
-       VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
-       RETURNING id, code`,
-      [title, duration, total_marks || 0, pass_percentage || 40, assessmentCode]
-    );
+    const result = useIsActive
+      ? await pool.query(
+          `INSERT INTO assessments (title, duration_minutes, total_marks, pass_percentage, is_active, code)
+           VALUES ($1, $2, $3, $4, true, $5)
+           RETURNING id, code`,
+          [title, duration, total_marks || 0, pass_percentage || 40, assessmentCode]
+        )
+      : await pool.query(
+          `INSERT INTO assessments (title, duration_minutes, total_marks, pass_percentage, status, code)
+           VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
+           RETURNING id, code`,
+          [title, duration, total_marks || 0, pass_percentage || 40, assessmentCode]
+        );
 
     res.status(201).json({
       message: "Assessment created successfully",
@@ -380,19 +610,48 @@ export async function createAssessment(req: Request, res: Response) {
  */
 export async function updateAssessment(req: Request, res: Response) {
   try {
+    const useIsActive = await hasIsActiveColumn();
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
     const { title, duration_minutes, pass_percentage, status } = req.body;
+    const normalizedBooleanStatus =
+      typeof status === "string"
+        ? ["active", "true", "1"].includes(status.toLowerCase())
+        : typeof status === "boolean"
+          ? status
+          : null;
+    const normalizedTextStatus =
+      typeof status === "string"
+        ? status.toUpperCase()
+        : typeof status === "boolean"
+          ? status
+            ? "ACTIVE"
+            : "INACTIVE"
+          : null;
 
-    const result = await pool.query(
-      `UPDATE assessments
-       SET title = COALESCE($1, title),
-           duration_minutes = COALESCE($2, duration_minutes),
-           pass_percentage = COALESCE($3, pass_percentage),
-           status = COALESCE($4, status)
-       WHERE id = $5
-       RETURNING id`,
-      [title, duration_minutes, pass_percentage, status, assessmentId]
-    );
+    const result = useIsActive
+      ? await pool.query(
+          `UPDATE assessments
+           SET title = COALESCE($1, title),
+               duration_minutes = COALESCE($2, duration_minutes),
+               pass_percentage = COALESCE($3, pass_percentage),
+               is_active = COALESCE($4, is_active)
+           WHERE id = $5
+           RETURNING id`,
+          [title, duration_minutes, pass_percentage, normalizedBooleanStatus, assessmentId]
+        )
+      : await pool.query(
+          `UPDATE assessments
+           SET title = COALESCE($1, title),
+               duration_minutes = COALESCE($2, duration_minutes),
+               pass_percentage = COALESCE($3, pass_percentage),
+               status = COALESCE($4, status)
+           WHERE id = $5
+           RETURNING id`,
+          [title, duration_minutes, pass_percentage, normalizedTextStatus, assessmentId]
+        );
 
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "Assessment not found" });
@@ -413,14 +672,32 @@ export async function addQuestion(req: Request, res: Response) {
   const client = await pool.connect();
   try {
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
     let { question_text, question_type, marks, correct_answer, options, section } = req.body;
 
     if (!question_text || !question_type || marks === undefined) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    const normalizedType = normalizeQuestionType(question_type);
+    if (!normalizedType) {
+      return res.status(400).json({ message: "question_type must be MCQ or DESCRIPTIVE" });
+    }
+
+    const normalizedSection = normalizeSection(section || "Quantitative");
+    if (!normalizedSection || !ALLOWED_SECTIONS.has(normalizedSection)) {
+      return res.status(400).json({ message: "section must be Quantitative, Verbal, Coding, or Logical" });
+    }
+
+    const numericMarks = Number(marks);
+    if (!Number.isFinite(numericMarks) || numericMarks <= 0) {
+      return res.status(400).json({ message: "marks must be a positive number" });
+    }
+
     // For MCQ, correct_answer MUST be the key (a, b, c, etc.)
-    if (question_type === "MCQ" && correct_answer && options) {
+    if (String(question_type).toLowerCase() === "mcq" && correct_answer && options) {
       let optionsObj: { [key: string]: string } = {};
       
       if (Array.isArray(options)) {
@@ -445,22 +722,22 @@ export async function addQuestion(req: Request, res: Response) {
     }
 
     await client.query("BEGIN");
+    const assessmentExists = await ensureAssessmentExists(client, assessmentId);
+    if (!assessmentExists) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Assessment not found" });
+    }
 
     // 1. Insert Question
-    const questionResult = await client.query(
-      `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options, section)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
-      [
-        assessmentId, 
-        question_text, 
-        question_type, 
-        marks, 
-        question_type.toUpperCase() === 'DESCRIPTIVE' ? null : correct_answer, 
-        JSON.stringify(options), 
-        section
-      ]
-    );
+    const questionResult = await insertQuestionWithCompatibility(client, {
+      assessmentId,
+      questionText: String(question_text),
+      questionType: normalizedType,
+      marks: numericMarks,
+      correctAnswer: normalizedType === "descriptive" ? null : (correct_answer ?? null),
+      options: options ?? null,
+      section: normalizedSection,
+    });
 
     const questionId = questionResult.rows[0].id;
 
@@ -478,10 +755,26 @@ export async function addQuestion(req: Request, res: Response) {
       message: "Question added successfully",
       questionId,
     });
-  } catch (error) {
-    await client.query("ROLLBACK");
+  } catch (error: any) {
+    await safeRollback(client);
     console.error("❌ addQuestion error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    if (error?.code === "23503") {
+      return res.status(400).json({ message: "Assessment not found" });
+    }
+    if (error?.code === "23514") {
+      return res.status(400).json({ message: "Invalid question_type, section, or marks value" });
+    }
+    if (error?.code === "22P02") {
+      return res.status(400).json({ message: "Invalid question payload format" });
+    }
+    if (error?.code === "42703") {
+      return res.status(500).json({ message: "Database schema mismatch. Please run latest migrations." });
+    }
+    const devMessage =
+      process.env.NODE_ENV !== "production"
+        ? `Internal server error (${error?.code || "unknown"}): ${error?.message || "unknown error"}`
+        : "Internal server error";
+    res.status(500).json({ message: devMessage });
   } finally {
     client.release();
   }
@@ -495,6 +788,9 @@ export async function bulkAddQuestions(req: Request, res: Response) {
   const client = await pool.connect();
   try {
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
     const questions = req.body; // Array of questions
 
     if (!Array.isArray(questions)) {
@@ -502,12 +798,36 @@ export async function bulkAddQuestions(req: Request, res: Response) {
     }
 
     await client.query("BEGIN");
+    const assessmentExists = await ensureAssessmentExists(client, assessmentId);
+    if (!assessmentExists) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Assessment not found" });
+    }
 
     for (const q of questions) {
       let { question_text, question_type, marks, correct_answer, options, section } = q;
 
+      if (!question_text || !question_type || marks === undefined) {
+        throw new Error("INVALID_QUESTION_PAYLOAD");
+      }
+
+      const numericMarks = Number(marks);
+      if (!Number.isFinite(numericMarks) || numericMarks <= 0) {
+        throw new Error("INVALID_QUESTION_PAYLOAD");
+      }
+
+      const normalizedType = normalizeQuestionType(question_type);
+      if (!normalizedType) {
+        throw new Error("INVALID_QUESTION_PAYLOAD");
+      }
+
+      const normalizedSection = normalizeSection(section || "Quantitative");
+      if (!normalizedSection || !ALLOWED_SECTIONS.has(normalizedSection)) {
+        throw new Error("INVALID_QUESTION_PAYLOAD");
+      }
+
       // For MCQ, correct_answer MUST be the key (a, b, c, etc.)
-      if (question_type === "MCQ" && correct_answer && options) {
+      if (String(question_type).toLowerCase() === "mcq" && correct_answer && options) {
         let optionsObj: { [key: string]: string } = {};
         
         if (Array.isArray(options)) {
@@ -532,20 +852,15 @@ export async function bulkAddQuestions(req: Request, res: Response) {
         }
       }
 
-      const questionResult = await client.query(
-        `INSERT INTO questions (assessment_id, question_text, question_type, marks, correct_answer, options, section)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id`,
-        [
-          assessmentId, 
-          question_text, 
-          question_type, 
-          marks, 
-          question_type.toUpperCase() === 'DESCRIPTIVE' ? null : correct_answer, 
-          JSON.stringify(options), 
-          section
-        ]
-      );
+      await insertQuestionWithCompatibility(client, {
+        assessmentId,
+        questionText: String(question_text),
+        questionType: normalizedType,
+        marks: numericMarks,
+        correctAnswer: normalizedType === "descriptive" ? null : (correct_answer ?? null),
+        options: options ?? null,
+        section: normalizedSection,
+      });
     }
 
     // Update Assessment Total Marks
@@ -561,10 +876,29 @@ export async function bulkAddQuestions(req: Request, res: Response) {
     res.status(201).json({
       message: `${questions.length} questions added successfully`,
     });
-  } catch (error) {
-    await client.query("ROLLBACK");
+  } catch (error: any) {
+    await safeRollback(client);
     console.error("❌ bulkAddQuestions error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    if (error?.message === "INVALID_QUESTION_PAYLOAD") {
+      return res.status(400).json({ message: "One or more questions have invalid required fields" });
+    }
+    if (error?.code === "23503") {
+      return res.status(400).json({ message: "Assessment not found" });
+    }
+    if (error?.code === "22P02") {
+      return res.status(400).json({ message: "Invalid question payload format" });
+    }
+    if (error?.code === "23514") {
+      return res.status(400).json({ message: "One or more questions have invalid question_type, section, or marks" });
+    }
+    if (error?.code === "42703") {
+      return res.status(500).json({ message: "Database schema mismatch. Please run latest migrations." });
+    }
+    const devMessage =
+      process.env.NODE_ENV !== "production"
+        ? `Internal server error (${error?.code || "unknown"}): ${error?.message || "unknown error"}`
+        : "Internal server error";
+    res.status(500).json({ message: devMessage });
   } finally {
     client.release();
   }
@@ -576,6 +910,9 @@ export async function bulkAddQuestions(req: Request, res: Response) {
 export async function getAssessmentQuestions(req: Request, res: Response) {
   try {
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
     const result = await pool.query(
       `SELECT
          q.id,
@@ -585,9 +922,23 @@ export async function getAssessmentQuestions(req: Request, res: Response) {
          q.correct_answer,
          q.section,
          CASE
-           WHEN q.question_type = 'mcq' THEN
-             (SELECT json_agg(json_build_object('id', key, 'text', value))
-              FROM jsonb_each_text(q.options) AS t(key, value))
+           WHEN LOWER(q.question_type) = 'mcq' THEN
+             (
+               CASE
+                 WHEN jsonb_typeof(q.options::jsonb) = 'object' THEN (
+                   SELECT json_agg(json_build_object('id', key, 'text', value))
+                   FROM jsonb_each_text(q.options::jsonb) AS t(key, value)
+                 )
+                 WHEN jsonb_typeof(q.options::jsonb) = 'array' THEN (
+                   SELECT json_agg(
+                     json_build_object('id', chr(96 + ordinality::int), 'text', value)
+                     ORDER BY ordinality
+                   )
+                   FROM jsonb_array_elements_text(q.options::jsonb) WITH ORDINALITY AS t(value, ordinality)
+                 )
+                 ELSE NULL
+               END
+             )
            ELSE NULL
          END AS options
        FROM questions q
@@ -609,6 +960,12 @@ export async function getAssessmentQuestions(req: Request, res: Response) {
 export async function deleteQuestion(req: Request, res: Response) {
   try {
     const { assessmentId, questionId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
+    if (!requireUuidParam(res, "questionId", questionId)) {
+      return;
+    }
 
     // 1️⃣ Verify question belongs to assessment
     const questionResult = await pool.query(
@@ -649,6 +1006,9 @@ export async function deleteQuestion(req: Request, res: Response) {
 export async function deleteAllQuestions(req: Request, res: Response) {
   try {
     const { assessmentId } = req.params;
+    if (!requireUuidParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
 
     // 1️⃣ Delete all questions
     await pool.query(
@@ -750,7 +1110,7 @@ export async function bulkAddCandidates(req: Request, res: Response) {
           [email, full_name || ""]
         );
 
-        if (result.rowCount > 0) {
+        if ((result.rowCount ?? 0) > 0) {
           insertedIds.push(result.rows[0].id);
         } else {
           skipCount++;
@@ -782,6 +1142,7 @@ export async function bulkAddCandidates(req: Request, res: Response) {
  */
 export async function getDashboardStats(req: Request, res: Response) {
   try {
+    const startedColumn = await getAttemptsStartedColumn();
     // 1. Total counts
     const countsResult = await pool.query(`
       SELECT 
@@ -814,11 +1175,11 @@ export async function getDashboardStats(req: Request, res: Response) {
         a.title as assessment_title,
         att.final_score,
         att.result,
-        att.start_time
+        att.${startedColumn} as started_at
       FROM attempts att
       JOIN users u ON att.user_id = u.id
       JOIN assessments a ON att.assessment_id = a.id
-      ORDER BY att.start_time DESC
+      ORDER BY att.${startedColumn} DESC
       LIMIT 10
     `);
 
@@ -839,6 +1200,9 @@ export async function getDashboardStats(req: Request, res: Response) {
 export async function deleteCandidate(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    if (!requireUuidParam(res, "id", id)) {
+      return;
+    }
     await pool.query("DELETE FROM users WHERE id = $1 AND role = 'CANDIDATE'", [id]);
     res.json({ message: "Candidate deleted successfully" });
   } catch (error) {
@@ -856,6 +1220,9 @@ export async function bulkDeleteCandidates(req: Request, res: Response) {
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ message: "Invalid or empty ID list" });
     }
+    if (!ids.every(isUuid)) {
+      return res.status(400).json({ message: "Invalid ID list" });
+    }
 
     await pool.query("DELETE FROM users WHERE id = ANY($1) AND role = 'CANDIDATE'", [ids]);
     res.json({ message: "Candidates deleted successfully" });
@@ -864,5 +1231,3 @@ export async function bulkDeleteCandidates(req: Request, res: Response) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
-
-

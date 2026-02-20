@@ -5,22 +5,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMyResults = getMyResults;
 const db_1 = __importDefault(require("../../config/db"));
+const attempt_schema_1 = require("../../utils/attempt-schema");
 async function getMyResults(req, res) {
     try {
         const userId = req.user.userId;
+        const submittedColumn = await (0, attempt_schema_1.getAttemptsSubmittedColumn)();
         const result = await db_1.default.query(`
       SELECT
         a.id AS attempt_id,
         ass.title,
-        a.final_score,
+        CASE WHEN a.is_published THEN a.final_score ELSE NULL END AS final_score,
         ass.total_marks,
-        a.result,
-        a.end_time
+        CASE WHEN a.is_published THEN a.result ELSE NULL END AS result,
+        a.is_published,
+        a.${submittedColumn} AS submitted_at
       FROM attempts a
       JOIN assessments ass ON ass.id = a.assessment_id
       WHERE a.user_id = $1
-        AND a.is_published = true
-      ORDER BY a.end_time DESC
+      ORDER BY a.${submittedColumn} DESC
       `, [userId]);
         res.json(result.rows);
     }

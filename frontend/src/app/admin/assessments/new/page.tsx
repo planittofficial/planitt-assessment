@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAssessment } from "@/services/admin.service";
 import Link from "next/link";
+import { notifyError } from "@/lib/notify";
 
 export default function NewAssessmentPage() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function NewAssessmentPage() {
       router.push(`/admin/assessments/${res.assessmentId}/edit`);
     } catch (err) {
       console.error(err);
-      alert("Failed to create assessment");
+      notifyError("Failed to create assessment");
     } finally {
       setLoading(false);
     }

@@ -6,9 +6,21 @@ import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, 
 import Link from "next/link";
 import { Question, Assessment } from "@/types";
 
+type ParsedQuestion = {
+  question_text: string;
+  question_type: "MCQ" | "DESCRIPTIVE";
+  marks: number;
+  correct_answer?: string;
+  options: string[];
+  section: string;
+};
+
 export default function EditAssessmentPage() {
   const params = useParams();
-  const assessmentId = params.assessmentsId as string;
+  const rawAssessmentId = params.assessmentsId;
+  const assessmentId = Array.isArray(rawAssessmentId)
+    ? rawAssessmentId[0]
+    : rawAssessmentId;
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +28,8 @@ export default function EditAssessmentPage() {
   const [updatingCriteria, setUpdatingCriteria] = useState(false);
   const [showSmartPaste, setShowSmartPaste] = useState(false);
   const [smartPasteText, setSmartPasteText] = useState("");
-  const [parsedQuestions, setParsedQuestions] = useState<Partial<Question>[]>([]);
+  const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
+  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
@@ -28,10 +41,13 @@ export default function EditAssessmentPage() {
   });
 
   useEffect(() => {
+    if (!assessmentId) return;
     loadData();
   }, [assessmentId]);
 
   async function loadData() {
+    if (!assessmentId) return;
+
     try {
       const [qData, aData] = await Promise.all([
         getAssessmentQuestions(assessmentId),
@@ -47,21 +63,31 @@ export default function EditAssessmentPage() {
   }
 
   async function handleUpdateCriteria() {
+    if (!assessment || !assessmentId) return;
+
     setUpdatingCriteria(true);
     try {
+      const normalizedStatus =
+        typeof assessment.status === "boolean"
+          ? assessment.status
+          : String(assessment.status || "").toUpperCase() === "ACTIVE";
+
       await updateAssessment(assessmentId, {
-        pass_percentage: assessment.pass_percentage
+        pass_percentage: assessment.pass_percentage,
+        status: normalizedStatus ? "ACTIVE" : "INACTIVE",
       });
-      alert("Criteria updated successfully");
+      setNotice({ type: "success", message: "Criteria updated successfully." });
     } catch (err) {
       console.error(err);
-      alert("Failed to update criteria");
+      setNotice({ type: "error", message: "Failed to update criteria." });
     } finally {
       setUpdatingCriteria(false);
     }
   }
 
   async function loadQuestions() {
+    if (!assessmentId) return;
+
     try {
       const data = await getAssessmentQuestions(assessmentId);
       setQuestions(data);
@@ -77,8 +103,8 @@ export default function EditAssessmentPage() {
 
   function handleSmartPasteParse() {
     const lines = smartPasteText.split("\n").map(l => l.trim()).filter(l => l !== "");
-    const result: Partial<Question>[] = [];
-    let currentQ: Partial<Question> | null = null;
+    const result: ParsedQuestion[] = [];
+    let currentQ: ParsedQuestion | null = null;
 
     lines.forEach(line => {
       if (/^\d+[\.\)]/.test(line) || line.startsWith("Q:")) {
@@ -128,27 +154,30 @@ export default function EditAssessmentPage() {
           setParsedQuestions(json);
           setShowSmartPaste(true);
         } else {
-          alert("Invalid JSON format. Expected an array of questions.");
+          setNotice({ type: "error", message: "Invalid JSON format. Expected an array of questions." });
         }
       } catch (err) {
         console.error(err);
-        alert("Failed to parse JSON file.");
+        setNotice({ type: "error", message: "Failed to parse JSON file." });
       }
     };
     reader.readAsText(file);
   }
 
   async function handleBulkSubmit() {
+    if (!assessmentId) return;
+
     setSubmitting(true);
     try {
       await bulkAddQuestions(assessmentId, parsedQuestions);
       setParsedQuestions([]);
       setSmartPasteText("");
       setShowSmartPaste(false);
+      setNotice({ type: "success", message: "Questions uploaded successfully." });
       loadQuestions();
     } catch (err) {
       console.error(err);
-      alert("Bulk upload failed");
+      setNotice({ type: "error", message: "Bulk upload failed." });
     } finally {
       setSubmitting(false);
     }
@@ -156,6 +185,8 @@ export default function EditAssessmentPage() {
 
   async function handleAddQuestion(e: React.FormEvent) {
     e.preventDefault();
+    if (!assessmentId) return;
+
     setSubmitting(true);
     try {
       const payload = {
@@ -171,10 +202,11 @@ export default function EditAssessmentPage() {
         options: ["", "", "", ""],
         section: "Quantitative",
       });
+      setNotice({ type: "success", message: "Question added successfully." });
       loadQuestions();
     } catch (err) {
       console.error(err);
-      alert("Failed to add question");
+      setNotice({ type: "error", message: "Failed to add question." });
     } finally {
       setSubmitting(false);
     }
@@ -187,24 +219,28 @@ export default function EditAssessmentPage() {
   };
 
   async function handleDeleteQuestion(questionId: string) {
+    if (!assessmentId) return;
     if (!confirm("Are you sure you want to delete this question?")) return;
     try {
       await deleteQuestion(assessmentId, questionId);
+      setNotice({ type: "success", message: "Question deleted successfully." });
       loadQuestions();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete question");
+      setNotice({ type: "error", message: "Failed to delete question." });
     }
   }
 
   async function handleDeleteAll() {
+    if (!assessmentId) return;
     if (!confirm("CRITICAL: This will delete ALL questions in this assessment. Are you sure?")) return;
     try {
       await deleteAllQuestions(assessmentId);
+      setNotice({ type: "success", message: "All questions deleted successfully." });
       loadQuestions();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete all questions");
+      setNotice({ type: "error", message: "Failed to delete all questions." });
     }
   }
 
@@ -234,13 +270,25 @@ export default function EditAssessmentPage() {
             </button>
           </div>
         </div>
+
+        {notice && (
+          <div
+            className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
+              notice.type === "success"
+                ? "border-green-500/30 bg-green-500/10 text-green-300"
+                : "border-red-500/30 bg-red-500/10 text-red-300"
+            }`}
+          >
+            {notice.message}
+          </div>
+        )}
         
         {assessment && (
           <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-8 shadow-xl">
             <h2 className="text-xl font-bold mb-6 text-yellow-500 flex items-center gap-2">
               🏆 Pass/Fail Criteria
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Pass Percentage (%)</label>
                 <input
@@ -251,6 +299,25 @@ export default function EditAssessmentPage() {
                   onChange={(e) => setAssessment({ ...assessment, pass_percentage: Number(e.target.value) })}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Assessment Status</label>
+                <select
+                  value={
+                    typeof assessment.status === "boolean"
+                      ? assessment.status
+                        ? "ACTIVE"
+                        : "INACTIVE"
+                      : String(assessment.status || "").toUpperCase() === "ACTIVE"
+                        ? "ACTIVE"
+                        : "INACTIVE"
+                  }
+                  onChange={(e) => setAssessment({ ...assessment, status: e.target.value })}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1 uppercase font-bold tracking-widest">Calculated Passing Marks</p>

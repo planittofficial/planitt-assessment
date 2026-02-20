@@ -34,7 +34,7 @@ export const getDescriptiveAnswers = (attemptId: string | number) => {
 };
 
 export const gradeDescriptiveAnswer = (payload: {
-  answerId: number;
+  answerId: string | number;
   marks: number;
 }) => {
   return apiFetch("/api/admin/answers/grade", {
@@ -100,7 +100,7 @@ export const addQuestion = (
 
 export const bulkAddQuestions = (
   assessmentId: string | number,
-  questions: Partial<Question>[]
+  questions: Array<Record<string, unknown>>
 ) => {
   return apiFetch(`/api/admin/assessments/${assessmentId}/questions/bulk`, {
     method: "POST",

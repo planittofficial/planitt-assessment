@@ -1,0 +1,92 @@
+[
+  {
+    "question_text": "What is 18 + 24?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "42",
+    "options": ["36", "40", "42", "48"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If x = 5, what is 3x + 2?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "17",
+    "options": ["12", "15", "17", "20"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "Choose the correctly spelled word.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Accommodate",
+    "options": ["Acommodate", "Accomodate", "Accommodate", "Acommodete"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Select the sentence with correct grammar.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "She has been working here for two years.",
+    "options": [
+      "She have been working here for two years.",
+      "She has been working here for two years.",
+      "She is working here since two years.",
+      "She was working here from two years."
+    ],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "What is the time complexity of binary search on a sorted array?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "O(log n)",
+    "options": ["O(n)", "O(log n)", "O(n log n)", "O(1)"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which data structure uses FIFO order?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Queue",
+    "options": ["Stack", "Queue", "Tree", "Graph"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "If all A are B and some B are C, which statement must be true?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Some C may be A",
+    "options": [
+      "All C are A",
+      "No C are A",
+      "Some C may be A",
+      "All B are A"
+    ],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Find the next number in the series: 2, 6, 12, 20, 30, ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "42",
+    "options": ["36", "40", "42", "44"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Explain the difference between a stack and a queue with one real-world example for each.",
+    "question_type": "DESCRIPTIVE",
+    "marks": 5,
+    "correct_answer": null,
+    "options": [],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Write a short paragraph on how time management improves exam performance.",
+    "question_type": "DESCRIPTIVE",
+    "marks": 5,
+    "correct_answer": null,
+    "options": [],
+    "section": "Verbal"
+  }
+]

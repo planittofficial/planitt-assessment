@@ -1,17 +1,39 @@
 import pool from "../config/db";
 
-export async function autoGradeMCQs(attemptId: number) {
+let answersTextColumnCache: "answer_text" | "answer" | null = null;
+
+async function getAnswersTextColumn() {
+  if (answersTextColumnCache) {
+    return answersTextColumnCache;
+  }
+
+  const result = await pool.query(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM pg_attribute
+       WHERE attrelid = to_regclass('answers')
+         AND attname = 'answer_text'
+         AND NOT attisdropped
+     ) AS has_answer_text`
+  );
+
+  answersTextColumnCache = result.rows[0]?.has_answer_text ? "answer_text" : "answer";
+  return answersTextColumnCache;
+}
+
+export async function autoGradeMCQs(attemptId: string) {
+  const answerColumn = await getAnswersTextColumn();
   const result = await pool.query(
     `
     SELECT 
       a.id AS answer_id,
       q.correct_answer,
       q.marks,
-      a.answer
+      a.${answerColumn} AS candidate_answer
     FROM answers a
     JOIN questions q ON q.id = a.question_id
     WHERE a.attempt_id = $1
-      AND q.question_type = 'MCQ'
+      AND LOWER(q.question_type) = 'mcq'
       AND a.is_graded = false
     `,
     [attemptId]
@@ -20,7 +42,7 @@ export async function autoGradeMCQs(attemptId: number) {
   let total = 0;
 
   for (const row of result.rows) {
-    const isCorrect = row.answer === row.correct_answer;
+    const isCorrect = row.candidate_answer === row.correct_answer;
     const marksObtained = isCorrect ? Number(row.marks) : 0;
 
     total += marksObtained;
@@ -39,7 +61,7 @@ export async function autoGradeMCQs(attemptId: number) {
   return total;
 }
 
-export async function calculateFinalScore(attemptId: number) {
+export async function calculateFinalScore(attemptId: string) {
   const result = await pool.query(
     `
     SELECT COALESCE(SUM(marks_obtained), 0) AS score

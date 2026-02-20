@@ -3,18 +3,23 @@
 import { useEffect } from "react";
 import { violationService } from "@/services/violation.service";
 import { useRouter } from "next/navigation";
+import { notifyError, notifyInfo } from "@/lib/notify";
 
-export function useViolation(attemptId: number) {
+export function useViolation(attemptId: string) {
   const router = useRouter();
 
   useEffect(() => {
     async function handleViolation(type: string, message: string) {
       try {
         const res = await violationService.log(attemptId, type);
-        alert(message);
+        notifyInfo(message);
         
         if (res.autoSubmitted) {
-          alert(`Your assessment has been automatically submitted due to: ${res.reason || "Maximum violations reached"}.`);
+          notifyError(
+            `Your assessment has been automatically submitted due to: ${
+              res.reason || "Maximum violations reached"
+            }.`
+          );
           router.push("/results");
         }
       } catch (err) {

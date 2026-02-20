@@ -28,11 +28,7 @@ async function calculatePassFail(attemptId) {
     }
     const percentage = (final_score / total_marks) * 100;
     const status = percentage >= pass_percentage ? "PASS" : "FAIL";
-    await db_1.default.query(`
-    UPDATE attempts
-    SET result = $1
-    WHERE id = $2
-    `, [status, attemptId]);
+    await db_1.default.query(`UPDATE attempts SET result = $1 WHERE id = $2`, [status, attemptId]);
     return {
         percentage,
         result: status,

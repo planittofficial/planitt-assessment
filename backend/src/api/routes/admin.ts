@@ -36,12 +36,7 @@ router.use(requireAuth, requireAdmin);
 router.get("/assessments", getAssessments);
 router.get("/assessments/:assessmentId", getAssessmentById);
 router.get("/assessments/:assessmentId/questions", getAssessmentQuestions);
-router.get(
-  "/assessments/:assessmentId/attempts",
-  requireAuth,
-  requireAdmin,
-  getAttemptsByAssessment
-);
+router.get("/assessments/:assessmentId/attempts", getAttemptsByAssessment);
 router.get("/attempts/:attemptId", getAttemptSummary);
 router.get("/attempts/:attemptId/details", getAttemptDetails);
 router.get("/attempts/:attemptId/violations", getViolationsByAttempt);

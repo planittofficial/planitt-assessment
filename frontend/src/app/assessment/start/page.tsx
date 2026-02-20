@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { attemptService } from "@/services/attempt.service";
 import { enterFullscreen } from "@/hooks/useFullscreen";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +83,13 @@ export default function StartAssessmentPage() {
         >
           {loading ? "Starting..." : "Start Assessment"}
         </button>
+
+        <Link
+          href="/results"
+          className="block w-full mt-3 bg-neutral-800 text-white px-6 py-3 rounded font-semibold hover:bg-neutral-700 transition"
+        >
+          View Results
+        </Link>
 
         <p className="mt-4 text-xs text-neutral-500">
           Once started, fullscreen mode will be enforced and the timer begins.

@@ -4,7 +4,7 @@ import { calculatePassFail } from "./result.service";
 /**
  * Finalizes an attempt if all answers are graded
  */
-export async function finalizeAttemptIfComplete(attemptId: number) {
+export async function finalizeAttemptIfComplete(attemptId: string) {
   // 1️⃣ Check for ungraded answers
   const pending = await pool.query(
     `

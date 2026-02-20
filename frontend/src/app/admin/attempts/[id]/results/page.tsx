@@ -10,14 +10,38 @@ export default function AttemptResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    if (id) {
-      getAttemptDetails(id)
-        .then(setData)
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
+    let mounted = true;
+
+    async function loadAttemptResult() {
+      if (!id) return;
+
+      try {
+        const response = await getAttemptDetails(id);
+        if (mounted) {
+          setData(response);
+        }
+      } catch (err: unknown) {
+        if (mounted) {
+          const message = err instanceof Error ? err.message : "Failed to load attempt result";
+          setError(message);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
+
+    if (id) {
+      loadAttemptResult();
+    }
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   if (loading) {
@@ -31,12 +55,17 @@ export default function AttemptResultsPage() {
   if (!data) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
-        <p>Attempt not found.</p>
+        <p>{error || "Attempt not found."}</p>
       </div>
     );
   }
 
   const { attempt, answers } = data;
+  const startedAt = attempt.started_at ?? attempt.start_time ?? null;
+  const submittedAt = attempt.submitted_at ?? attempt.end_time ?? null;
+  const startedTime = startedAt ? new Date(startedAt).getTime() : NaN;
+  const submittedTime = submittedAt ? new Date(submittedAt).getTime() : NaN;
+  const hasValidDuration = Number.isFinite(startedTime) && Number.isFinite(submittedTime) && submittedTime >= startedTime;
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white p-8">
@@ -79,15 +108,15 @@ export default function AttemptResultsPage() {
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Started</p>
                 <p className="text-sm text-gray-300">
-                  {new Date(attempt.start_time).toLocaleTimeString()}
+                  {Number.isFinite(startedTime) ? new Date(startedAt).toLocaleTimeString() : "N/A"}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Duration</p>
                 <p className="text-sm text-gray-300">
-                  {attempt.end_time 
-                    ? `${Math.round((new Date(attempt.end_time).getTime() - new Date(attempt.start_time).getTime()) / 60000)} mins`
-                    : 'N/A'
+                  {hasValidDuration
+                    ? `${Math.round((submittedTime - startedTime) / 60000)} mins`
+                    : "N/A"
                   }
                 </p>
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAssessments, publishAllResults } from "@/services/admin.service";
 import Link from "next/link";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 export default function AdminAssessmentsPage() {
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -28,10 +29,10 @@ export default function AdminAssessmentsPage() {
     setPublishingId(assessmentId);
     try {
       await publishAllResults(assessmentId);
-      alert("Results published successfully.");
+      notifySuccess("Results published successfully.");
     } catch (err) {
       console.error("Failed to publish results", err);
-      alert("Failed to publish results");
+      notifyError("Failed to publish results");
     } finally {
       setPublishingId(null);
     }
@@ -64,7 +65,17 @@ export default function AdminAssessmentsPage() {
               <span className="text-xs bg-neutral-800 px-2 py-0.5 rounded text-neutral-400">
                 Code: <span className="text-yellow-500 font-mono font-bold uppercase">{a.code}</span>
               </span>
-              <span className="text-xs text-gray-400">| {a.status}</span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded border ${
+                  String(a.status).toLowerCase() === "true" || String(a.status).toUpperCase() === "ACTIVE"
+                    ? "text-green-400 border-green-500/30 bg-green-500/10"
+                    : "text-red-400 border-red-500/30 bg-red-500/10"
+                }`}
+              >
+                {String(a.status).toLowerCase() === "true" || String(a.status).toUpperCase() === "ACTIVE"
+                  ? "Active"
+                  : "Inactive"}
+              </span>
             </div>
           </div>
 

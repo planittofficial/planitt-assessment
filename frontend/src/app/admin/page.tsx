@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAdmin } from "@/hooks/useAdmin";
 import { getDashboardStats } from "@/services/admin.service";
+import { notifyInfo } from "@/lib/notify";
 
 export default function AdminPage() {
   const { loading: adminLoading } = useAdmin();
@@ -35,7 +36,7 @@ export default function AdminPage() {
     const passed = stats.recentResults.filter((r: any) => r.result === "PASS");
     
     if (passed.length === 0) {
-      alert("No passed candidates found in recent results to export.");
+      notifyInfo("No passed candidates found in recent results to export.");
       return;
     }
 
@@ -48,7 +49,7 @@ export default function AdminPage() {
         r.assessment_title,
         r.final_score,
         r.result,
-        new Date(r.start_time).toLocaleDateString()
+        formatDateForUi(getBestDateValue(r))
       ].map(field => `"${field}"`).join(","))
     ].join("\n");
 
@@ -175,7 +176,7 @@ export default function AdminPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-xs text-gray-500 text-right">
-                          {new Date(r.start_time).toLocaleDateString()}
+                          {formatDateForUi(getBestDateValue(r))}
                         </td>
                       </tr>
                     ))
@@ -188,6 +189,23 @@ export default function AdminPage() {
       </div>
     </div>
   );
+}
+
+function getBestDateValue(row: any): string | null {
+  return (
+    row?.started_at ??
+    row?.start_time ??
+    row?.submitted_at ??
+    row?.end_time ??
+    row?.created_at ??
+    null
+  );
+}
+
+function formatDateForUi(value: string | null): string {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleDateString();
 }
 
 function StatCard({ title, value, color }: { title: string, value: any, color: string }) {

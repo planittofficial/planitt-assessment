@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getAttemptsByAssessment, publishAllResults } from "@/services/admin.service";
 import { useAdmin } from "@/hooks/useAdmin";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 
 import Link from "next/link";
 
@@ -50,10 +51,10 @@ export default function AdminAssessmentAttemptsPage() {
     try {
       await publishAllResults(assessmentId);
       await loadAttempts();
-      alert("All finalized results published successfully.");
+      notifySuccess("All finalized results published successfully.");
     } catch (err) {
       console.error("Failed to publish results", err);
-      alert("Failed to publish results");
+      notifyError("Failed to publish results");
     } finally {
       setPublishingAll(false);
     }
@@ -67,7 +68,7 @@ export default function AdminAssessmentAttemptsPage() {
   const handleExportPassed = () => {
     const passed = attempts.filter(a => a.result === "PASS");
     if (passed.length === 0) {
-      alert("No passed candidates to export.");
+      notifyInfo("No passed candidates to export.");
       return;
     }
 
@@ -80,8 +81,8 @@ export default function AdminAssessmentAttemptsPage() {
         a.status,
         a.final_score ?? "0",
         a.result,
-        new Date(a.start_time).toLocaleString(),
-        a.end_time ? new Date(a.end_time).toLocaleString() : "N/A"
+        (a.started_at ?? a.start_time) ? new Date(a.started_at ?? a.start_time).toLocaleString() : "N/A",
+        (a.submitted_at ?? a.end_time) ? new Date(a.submitted_at ?? a.end_time).toLocaleString() : "N/A"
       ].map(field => `"${field}"`).join(","))
     ].join("\n");
 
@@ -193,8 +194,8 @@ export default function AdminAssessmentAttemptsPage() {
                 </div>
                 <h3 className="text-lg font-medium text-white mb-1">{a.email}</h3>
                 <div className="flex gap-4 text-xs text-gray-400">
-                  <p>Started: {new Date(a.start_time).toLocaleString()}</p>
-                  {a.end_time && <p>Ended: {new Date(a.end_time).toLocaleString()}</p>}
+                  <p>Started: {(a.started_at ?? a.start_time) ? new Date(a.started_at ?? a.start_time).toLocaleString() : "N/A"}</p>
+                  {(a.submitted_at ?? a.end_time) && <p>Ended: {new Date(a.submitted_at ?? a.end_time).toLocaleString()}</p>}
                 </div>
               </div>
 

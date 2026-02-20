@@ -1,33 +1,35 @@
 export type Question = {
-  id: number;
+  id: string;
   question_text: string;
   question_type: "MCQ" | "DESCRIPTIVE";
   options?: { id: string; text: string }[];
+  correct_answer?: string;
   marks: number;
   section: string;
 };
 
 export type Assessment = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   duration_minutes: number;
   total_marks: number;
   pass_percentage: number;
+  status?: string | boolean;
   created_at: string;
 };
 
 export type Candidate = {
-  id: number;
+  id: string;
   full_name: string;
   email: string;
   phone?: string;
 };
 
 export type Attempt = {
-  id: number;
-  user_id: number;
-  assessment_id: number;
+  id: string;
+  user_id: string;
+  assessment_id: string;
   score: number | null;
   status: "IN_PROGRESS" | "COMPLETED";
   start_time: string;
@@ -37,7 +39,6 @@ export type Attempt = {
 };
 
 export type AnswerPayload = {
-  questionId: number;
+  questionId: string;
   answer: string;
 };
-

@@ -1,6 +1,7 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./auth.middleware";
 import { enforceTimeLimit } from "../../services/timer.service";
+import { isUuid } from "../../utils/validation";
 
 export async function enforceAttemptTimer(
   req: AuthRequest,
@@ -14,7 +15,11 @@ export async function enforceAttemptTimer(
 
   if (!attemptId) return next();
 
-  const result = await enforceTimeLimit(Number(attemptId));
+  if (!isUuid(String(attemptId))) {
+    return res.status(400).json({ message: "Invalid attemptId" });
+  }
+
+  const result = await enforceTimeLimit(String(attemptId));
 
   if (result.expired) {
     return res.status(403).json({

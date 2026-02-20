@@ -4,7 +4,7 @@ import pool from "../config/db";
  * Calculates PASS / FAIL for an attempt
  * Must be called AFTER final_score is set
  */
-export async function calculatePassFail(attemptId: number) {
+export async function calculatePassFail(attemptId: string) {
   const result = await pool.query(
     `
     SELECT 
@@ -31,14 +31,7 @@ export async function calculatePassFail(attemptId: number) {
   const percentage = (final_score / total_marks) * 100;
   const status = percentage >= pass_percentage ? "PASS" : "FAIL";
 
-  await pool.query(
-    `
-    UPDATE attempts
-    SET result = $1
-    WHERE id = $2
-    `,
-    [status, attemptId]
-  );
+  await pool.query(`UPDATE attempts SET result = $1 WHERE id = $2`, [status, attemptId]);
 
   return {
     percentage,

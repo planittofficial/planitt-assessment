@@ -7,17 +7,43 @@ import Link from "next/link";
 interface AssessmentResult {
   attempt_id: string;
   title: string;
-  final_score: number;
+  final_score: number | null;
   total_marks: number;
-  result: string;
-  end_time: string;
+  result: string | null;
+  is_published: boolean;
+  submitted_at: string | null;
 }
 
 export default function ResultsPage() {
   const [results, setResults] = useState<AssessmentResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    apiFetch("/api/results/me").then(setResults);
+    let mounted = true;
+
+    async function loadResults() {
+      try {
+        const data = await apiFetch("/api/results/me");
+        if (mounted) {
+          setResults(data);
+        }
+      } catch (err: unknown) {
+        if (mounted) {
+          const message = err instanceof Error ? err.message : "Failed to load results";
+          setError(message);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadResults();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -36,8 +62,12 @@ export default function ResultsPage() {
           </Link>
         </div>
 
-        {results.length === 0 ? (
-        <p className="text-gray-500">No results published yet.</p>
+        {loading ? (
+        <p className="text-gray-500">Loading results...</p>
+      ) : error ? (
+        <p className="text-red-400">{error}</p>
+      ) : results.length === 0 ? (
+        <p className="text-gray-500">No assessments attempted yet.</p>
       ) : (
         results.map((r) => (
           <div
@@ -47,21 +77,33 @@ export default function ResultsPage() {
             <div>
               <h2 className="text-lg font-semibold text-white">{r.title}</h2>
               <p className="text-sm text-gray-400">
-                Completed on {new Date(r.end_time).toLocaleDateString()}
+                {r.submitted_at
+                  ? `Completed on ${new Date(r.submitted_at).toLocaleDateString()}`
+                  : "Attempt in progress"}
               </p>
             </div>
             <div className="text-right flex flex-col items-end gap-2">
               <div className="flex flex-col items-end">
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-0.5">Score</p>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {r.final_score} <span className="text-sm text-gray-500 font-normal">/ {r.total_marks}</span>
+                  {r.is_published
+                    ? (
+                        <>
+                          {r.final_score ?? 0} <span className="text-sm text-gray-500 font-normal">/ {r.total_marks}</span>
+                        </>
+                      )
+                    : "Not Released"}
                 </p>
               </div>
-              {r.result && (
+              {r.is_published ? (
                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                   r.result === 'PASS' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
                 }`}>
-                  {r.result}
+                  {r.result || "PENDING"}
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-neutral-800 text-neutral-300 border border-neutral-700">
+                  Not Released
                 </span>
               )}
             </div>

@@ -5,15 +5,16 @@ import { useParams, useRouter } from "next/navigation";
 import { attemptService } from "@/services/attempt.service";
 import { useViolation } from "@/hooks/useViolation";
 import { Question } from "@/types";
+import { notifyError, notifyInfo } from "@/lib/notify";
 
 export default function AttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
   const router = useRouter();
-  const id = Number(attemptId);
+  const id = attemptId;
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittedScore, setSubmittedScore] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes in seconds
   const [selectedSection, setSelectedSection] = useState<string>("Quantitative"); // Quantitative first by default
@@ -28,11 +29,11 @@ export default function AttemptPage() {
       const res = await attemptService.submit(id);
       setSubmittedScore(res.score);
       if (isAuto) {
-        alert("Time is up! Your assessment has been submitted automatically.");
+        notifyInfo("Time is up! Your assessment has been submitted automatically.");
       }
     } catch (err) {
       console.error("Failed to submit assessment", err);
-      if (!isAuto) alert("Failed to submit assessment. Please contact support.");
+      if (!isAuto) notifyError("Failed to submit assessment. Please contact support.");
     }
   }, [id, submittedScore]);
 
@@ -60,7 +61,7 @@ export default function AttemptPage() {
 
   const filteredQuestions = questions.filter(q => q.section === selectedSection);
 
-  async function saveAnswer(qId: number, value: string) {
+  async function saveAnswer(qId: string, value: string) {
     if (submittedScore !== null) return;
     setAnswers({ ...answers, [qId]: value });
     try {
@@ -301,7 +302,7 @@ export default function AttemptPage() {
             </div>
 
             <button
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               className="w-full mt-8 bg-neutral-800 text-white py-3 rounded-xl text-sm font-bold border border-neutral-700 hover:bg-red-600 hover:border-red-500 transition-all"
             >
               Quit Test

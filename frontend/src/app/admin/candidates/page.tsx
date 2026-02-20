@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { getCandidates, addCandidate, bulkAddCandidates, deleteCandidate, bulkDeleteCandidates } from "@/services/admin.service";
 import Link from "next/link";
 import { Candidate } from "@/types";
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<(Candidate & { created_at: string })[]>([]);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -39,11 +40,11 @@ export default function CandidatesPage() {
       setEmail("");
       setFullName("");
       await loadCandidates();
-      alert("Candidate added successfully");
+      notifySuccess("Candidate added successfully");
     } catch (err: unknown) {
       console.error("Failed to add candidate", err);
       const message = err instanceof Error ? err.message : "Failed to add candidate";
-      alert(message);
+      notifyError(message);
     } finally {
       setAdding(false);
     }
@@ -87,19 +88,19 @@ export default function CandidatesPage() {
       });
 
       if (parsedCandidates.length === 0) {
-        alert("No valid candidates found in CSV. Please ensure format is 'name,email' or 'email,name'.");
+        notifyError("No valid candidates found in CSV. Please ensure format is 'name,email' or 'email,name'.");
         setUploading(false);
         return;
       }
 
       try {
         const res = await bulkAddCandidates(parsedCandidates);
-        alert(`Bulk upload completed! Added: ${res.insertedCount}, Skipped (already exists): ${res.skippedCount}`);
+        notifySuccess(`Bulk upload completed! Added: ${res.insertedCount}, Skipped (already exists): ${res.skippedCount}`);
         await loadCandidates();
       } catch (err: unknown) {
         console.error("Failed to upload CSV", err);
         const message = err instanceof Error ? err.message : "Failed to upload CSV";
-        alert(message);
+        notifyError(message);
       } finally {
         setUploading(false);
         // Clear input
@@ -109,7 +110,7 @@ export default function CandidatesPage() {
     reader.readAsText(file);
   };
 
-  const handleDeleteIndividual = async (id: number) => {
+  const handleDeleteIndividual = async (id: string) => {
     if (!confirm("Are you sure you want to delete this candidate?")) return;
     try {
       await deleteCandidate(id);
@@ -117,7 +118,7 @@ export default function CandidatesPage() {
       await loadCandidates();
     } catch (err: unknown) {
       console.error("Failed to delete candidate", err);
-      alert("Failed to delete candidate");
+      notifyError("Failed to delete candidate");
     }
   };
 
@@ -130,7 +131,7 @@ export default function CandidatesPage() {
       await loadCandidates();
     } catch (err: unknown) {
       console.error("Failed to delete candidates", err);
-      alert("Failed to delete candidates");
+      notifyError("Failed to delete candidates");
     }
   };
 
@@ -142,7 +143,7 @@ export default function CandidatesPage() {
     }
   };
 
-  const toggleSelectOne = (id: number) => {
+  const toggleSelectOne = (id: string) => {
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter(sid => sid !== id));
     } else {

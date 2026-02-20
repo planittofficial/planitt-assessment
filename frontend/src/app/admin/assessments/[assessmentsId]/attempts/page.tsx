@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getAttemptsByAssessment, publishAllResults } from "@/services/admin.service";
 import { useAdmin } from "@/hooks/useAdmin";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
+import { openConfirmDialog } from "@/lib/dialog";
 
 import Link from "next/link";
 
@@ -40,12 +41,13 @@ export default function AdminAssessmentAttemptsPage() {
 
   const handlePublishAll = async () => {
     if (!assessmentId) return;
-    if (
-      !confirm(
-        "Are you sure you want to publish ALL finalized results for this assessment? This will make them visible to all candidates."
-      )
-    )
-      return;
+    const confirmed = await openConfirmDialog({
+      title: "Publish All Results",
+      message:
+        "Are you sure you want to publish ALL finalized results for this assessment? This will make them visible to all candidates.",
+      confirmText: "Publish",
+    });
+    if (!confirmed) return;
 
     setPublishingAll(true);
     try {

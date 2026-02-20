@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getAssessments, publishAllResults } from "@/services/admin.service";
 import Link from "next/link";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
+import { openConfirmDialog } from "@/lib/dialog";
 
 export default function AdminAssessmentsPage() {
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -19,12 +20,12 @@ export default function AdminAssessmentsPage() {
   }, []);
 
   const handlePublishAll = async (assessmentId: string | number) => {
-    if (
-      !confirm(
-        "Are you sure you want to publish ALL finalized results for this assessment?"
-      )
-    )
-      return;
+    const confirmed = await openConfirmDialog({
+      title: "Publish Results",
+      message: "Are you sure you want to publish ALL finalized results for this assessment?",
+      confirmText: "Publish",
+    });
+    if (!confirmed) return;
 
     setPublishingId(assessmentId);
     try {

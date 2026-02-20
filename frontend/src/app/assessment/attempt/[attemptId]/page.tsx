@@ -6,6 +6,7 @@ import { attemptService } from "@/services/attempt.service";
 import { useViolation } from "@/hooks/useViolation";
 import { Question } from "@/types";
 import { notifyError, notifyInfo } from "@/lib/notify";
+import { openConfirmDialog } from "@/lib/dialog";
 
 export default function AttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -244,8 +245,13 @@ export default function AttemptPage() {
             <div className="flex gap-4">
               {currentIndex === filteredQuestions.length - 1 ? (
                 <button
-                  onClick={() => {
-                    if (confirm("Are you sure you want to submit the entire assessment?")) {
+                  onClick={async () => {
+                    const confirmed = await openConfirmDialog({
+                      title: "Submit Assessment",
+                      message: "Are you sure you want to submit the entire assessment?",
+                      confirmText: "Submit",
+                    });
+                    if (confirmed) {
                       handleSubmit();
                     }
                   }}

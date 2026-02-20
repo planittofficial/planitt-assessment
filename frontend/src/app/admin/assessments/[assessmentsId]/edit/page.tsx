@@ -6,6 +6,7 @@ import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, 
 import Link from "next/link";
 import { Question, Assessment } from "@/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
+import { openConfirmDialog } from "@/lib/dialog";
 
 type ParsedQuestion = {
   question_text: string;
@@ -220,7 +221,13 @@ export default function EditAssessmentPage() {
 
   async function handleDeleteQuestion(questionId: string) {
     if (!assessmentId) return;
-    if (!confirm("Are you sure you want to delete this question?")) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete Question",
+      message: "Are you sure you want to delete this question?",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteQuestion(assessmentId, questionId);
       notifySuccess("Question deleted successfully.");
@@ -233,7 +240,13 @@ export default function EditAssessmentPage() {
 
   async function handleDeleteAll() {
     if (!assessmentId) return;
-    if (!confirm("CRITICAL: This will delete ALL questions in this assessment. Are you sure?")) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete All Questions",
+      message: "CRITICAL: This will delete ALL questions in this assessment. Are you sure?",
+      confirmText: "Delete All",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteAllQuestions(assessmentId);
       notifySuccess("All questions deleted successfully.");

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NotificationHost from "@/components/NotificationHost";
 import CandidateProfileMenu from "@/components/CandidateProfileMenu";
+import DialogHost from "@/components/DialogHost";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
       >
         <CandidateProfileMenu />
         {children}
+        <DialogHost />
         <NotificationHost />
       </body>
     </html>

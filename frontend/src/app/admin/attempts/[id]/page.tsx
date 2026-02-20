@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getDescriptiveAnswers, gradeDescriptiveAnswer, getAttemptSummary } from "@/services/admin.service";
 import { notifyError } from "@/lib/notify";
+import { openPromptDialog } from "@/lib/dialog";
 
 export default function AttemptReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -92,9 +93,16 @@ export default function AttemptReviewPage() {
                       Full Marks ({a.marks})
                     </button>
                     <button
-                      onClick={() => {
-                        const m = prompt("Enter marks:", "0");
-                        if (m !== null) grade(a.id, Number(m));
+                      onClick={async () => {
+                        const entered = await openPromptDialog({
+                          title: "Grade Answer",
+                          message: `Enter marks (0 to ${a.marks})`,
+                          defaultValue: "0",
+                          confirmText: "Save Marks",
+                          inputPlaceholder: "Marks",
+                        });
+                        if (entered === null) return;
+                        grade(a.id, Number(entered));
                       }}
                       className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-neutral-700"
                     >

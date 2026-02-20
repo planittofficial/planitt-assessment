@@ -5,6 +5,7 @@ import { getCandidates, addCandidate, bulkAddCandidates, deleteCandidate, bulkDe
 import Link from "next/link";
 import { Candidate } from "@/types";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
+import { openConfirmDialog } from "@/lib/dialog";
 
 export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<(Candidate & { created_at: string })[]>([]);
@@ -111,7 +112,13 @@ export default function CandidatesPage() {
   };
 
   const handleDeleteIndividual = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this candidate?")) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete Candidate",
+      message: "Are you sure you want to delete this candidate?",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteCandidate(id);
       setSelectedIds(selectedIds.filter(sid => sid !== id));
@@ -124,7 +131,13 @@ export default function CandidatesPage() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedIds.length} candidates?`)) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete Candidates",
+      message: `Are you sure you want to delete ${selectedIds.length} candidates?`,
+      confirmText: "Delete All",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await bulkDeleteCandidates(selectedIds);
       setSelectedIds([]);

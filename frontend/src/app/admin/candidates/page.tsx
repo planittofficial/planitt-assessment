@@ -166,47 +166,47 @@ export default function CandidatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <p className="text-white text-lg animate-pulse">Loading candidates...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-900 text-lg animate-pulse">Loading candidates...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
         >
           ← Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold mb-8 text-white">Manage Candidates</h1>
+        <h1 className="text-3xl font-bold mb-8 text-gray-900">Manage Candidates</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           {/* Add Candidate Form */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-lg">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-yellow-500">Add New Candidate</h2>
             <form onSubmit={handleAddCandidate} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="candidate@example.com"
                   required
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Full Name</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
               </div>
               <button
@@ -220,13 +220,13 @@ export default function CandidatesPage() {
           </div>
 
           {/* Bulk Upload CSV */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-lg">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-yellow-500">Bulk Upload (CSV)</h2>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-gray-600 mb-4">
               Upload a CSV file with candidates. Format: <code className="text-yellow-500">name,email</code> or <code className="text-yellow-500">email,name</code>. Header row is optional.
             </p>
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-neutral-700 rounded-lg p-8 text-center hover:border-yellow-500 transition-colors cursor-pointer relative">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-yellow-500 transition-colors cursor-pointer relative">
                 <input
                   type="file"
                   accept=".csv"
@@ -238,7 +238,7 @@ export default function CandidatesPage() {
                   <svg className="w-10 h-10 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  <p className="text-gray-300 font-medium">
+                  <p className="text-gray-700 font-medium">
                     {uploading ? "Processing..." : "Click or drag CSV file to upload"}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">Maximum 5MB</p>
@@ -252,7 +252,7 @@ export default function CandidatesPage() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold flex items-center gap-3">
             Candidates 
-            <span className="text-sm bg-neutral-800 text-gray-400 px-3 py-1 rounded-full">{candidates.length}</span>
+            <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{candidates.length}</span>
           </h2>
           {selectedIds.length > 0 && (
             <button
@@ -264,16 +264,16 @@ export default function CandidatesPage() {
           )}
         </div>
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-neutral-800 border-b border-neutral-700 text-gray-400 text-[10px] uppercase tracking-widest font-black">
+              <tr className="bg-gray-100 border-b border-gray-300 text-gray-600 text-[10px] uppercase tracking-widest font-black">
                 <th className="px-6 py-4 w-12">
                   <input
                     type="checkbox"
                     checked={candidates.length > 0 && selectedIds.length === candidates.length}
                     onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-neutral-900"
+                    className="w-4 h-4 rounded border-gray-300 bg-white text-yellow-500 focus:ring-yellow-500 focus:ring-offset-white"
                   />
                 </th>
                 <th className="px-6 py-4">Email</th>
@@ -282,7 +282,7 @@ export default function CandidatesPage() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody className="divide-y divide-gray-200">
               {candidates.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
@@ -291,20 +291,20 @@ export default function CandidatesPage() {
                 </tr>
               ) : (
                 candidates.map((c) => (
-                  <tr key={c.id} className={`hover:bg-neutral-800/30 transition-colors ${selectedIds.includes(c.id) ? 'bg-yellow-500/5' : ''}`}>
+                  <tr key={c.id} className={`hover:bg-gray-100/30 transition-colors ${selectedIds.includes(c.id) ? 'bg-yellow-500/5' : ''}`}>
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         checked={selectedIds.includes(c.id)}
                         onChange={() => toggleSelectOne(c.id)}
-                        className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-yellow-500 focus:ring-yellow-500 focus:ring-offset-neutral-900"
+                        className="w-4 h-4 rounded border-gray-300 bg-white text-yellow-500 focus:ring-yellow-500 focus:ring-offset-white"
                       />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-white">{c.email}</div>
+                      <div className="font-medium text-gray-900">{c.email}</div>
                     </td>
-                    <td className="px-6 py-4 text-gray-400">{c.full_name || "-"}</td>
-                    <td className="px-6 py-4 text-neutral-500 text-sm font-mono">
+                    <td className="px-6 py-4 text-gray-600">{c.full_name || "-"}</td>
+                    <td className="px-6 py-4 text-gray-500 text-sm font-mono">
                       {new Date(c.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -326,3 +326,4 @@ export default function CandidatesPage() {
     </div>
   );
 }
+

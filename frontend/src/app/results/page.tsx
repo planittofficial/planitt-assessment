@@ -54,13 +54,13 @@ export default function ResultsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">My Results</h1>
           <Link 
             href="/assessment/start" 
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-lg hover:bg-neutral-800 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -81,11 +81,11 @@ export default function ResultsPage() {
           return (
           <div
             key={r.attempt_id}
-            className="p-6 bg-neutral-900 border border-neutral-800 rounded-xl mb-4 shadow-lg flex justify-between items-center"
+            className="p-6 bg-white border border-gray-200 rounded-xl mb-4 shadow-lg flex justify-between items-center"
           >
             <div>
-              <h2 className="text-lg font-semibold text-white">{r.title}</h2>
-              <p className="text-sm text-gray-400">
+              <h2 className="text-lg font-semibold text-gray-900">{r.title}</h2>
+              <p className="text-sm text-gray-600">
                 {r.submitted_at
                   ? `Completed on ${new Date(r.submitted_at).toLocaleDateString()}`
                   : "Attempt in progress"}
@@ -111,7 +111,7 @@ export default function ResultsPage() {
                   {r.result || "PENDING"}
                 </span>
               ) : (
-                <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-neutral-800 text-neutral-300 border border-neutral-700">
+                <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-gray-100 text-gray-600 border border-gray-300">
                   Not Released
                 </span>
               )}
@@ -124,3 +124,4 @@ export default function ResultsPage() {
     </div>
   );
 }
+

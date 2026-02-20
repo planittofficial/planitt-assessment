@@ -46,7 +46,7 @@ export default function AttemptResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
         <p className="animate-pulse">Loading results...</p>
       </div>
     );
@@ -54,7 +54,7 @@ export default function AttemptResultsPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
         <p>{error || "Attempt not found."}</p>
       </div>
     );
@@ -68,16 +68,16 @@ export default function AttemptResultsPage() {
   const hasValidDuration = Number.isFinite(startedTime) && Number.isFinite(submittedTime) && submittedTime >= startedTime;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 hover:text-white transition-colors mb-6 flex items-center gap-2 text-sm"
+          className="text-gray-600 hover:text-gray-900 transition-colors mb-6 flex items-center gap-2 text-sm"
         >
           ← Back
         </button>
 
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 mb-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6">
             <div className={`text-4xl font-black ${
               attempt.result === 'PASS' ? 'text-green-500/20' : 'text-red-500/20'
@@ -88,12 +88,12 @@ export default function AttemptResultsPage() {
 
           <div className="relative z-10">
             <h1 className="text-3xl font-bold mb-2">{attempt.assessment_title}</h1>
-            <p className="text-gray-400 mb-6 font-medium">{attempt.email}</p>
+            <p className="text-gray-600 mb-6 font-medium">{attempt.email}</p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Score</p>
-                <p className="text-2xl font-mono font-bold text-white">
+                <p className="text-2xl font-mono font-bold text-gray-900">
                   {attempt.final_score} <span className="text-sm text-gray-500">/ {attempt.total_marks}</span>
                 </p>
               </div>
@@ -107,13 +107,13 @@ export default function AttemptResultsPage() {
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Started</p>
-                <p className="text-sm text-gray-300">
+                <p className="text-sm text-gray-700">
                   {Number.isFinite(startedTime) ? new Date(startedAt).toLocaleTimeString() : "N/A"}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Duration</p>
-                <p className="text-sm text-gray-300">
+                <p className="text-sm text-gray-700">
                   {hasValidDuration
                     ? `${Math.round((submittedTime - startedTime) / 60000)} mins`
                     : "N/A"
@@ -126,7 +126,7 @@ export default function AttemptResultsPage() {
 
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
           Question Breakdown
-          <span className="text-xs bg-neutral-800 text-gray-400 px-2 py-1 rounded-full font-normal">
+          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-normal">
             {answers.length} Questions
           </span>
         </h2>
@@ -135,7 +135,7 @@ export default function AttemptResultsPage() {
           {answers.map((ans: any, index: number) => (
             <div
               key={ans.answer_id}
-              className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 transition-all hover:border-neutral-700"
+              className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300"
             >
               <div className="flex justify-between items-start gap-4 mb-4">
                 <div className="flex-1">
@@ -155,21 +155,21 @@ export default function AttemptResultsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-neutral-950 rounded-lg p-4 border border-neutral-800">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">User Answer</p>
                   <p className={`text-sm ${
                     ans.question_type === 'MCQ' && ans.user_answer === ans.correct_answer 
                       ? 'text-green-400' 
                       : ans.question_type === 'MCQ' 
                         ? 'text-red-400' 
-                        : 'text-gray-300'
+                        : 'text-gray-700'
                   }`}>
                     {ans.user_answer || <span className="italic text-gray-600">No answer provided</span>}
                   </p>
                 </div>
 
                 {ans.question_type === 'MCQ' && (
-                  <div className="bg-neutral-950 rounded-lg p-4 border border-neutral-800">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">Correct Answer</p>
                     <p className="text-sm text-green-400">{ans.correct_answer}</p>
                   </div>

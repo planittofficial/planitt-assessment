@@ -67,14 +67,14 @@ export default function AdminPage() {
 
   if (adminLoading || loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <p className="text-white text-lg animate-pulse">Loading dashboard...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-900 text-lg animate-pulse">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -105,18 +105,18 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Assessment Breakdown */}
-          <div className="lg:col-span-1 bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-lg">
+          <div className="lg:col-span-1 bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
             <h2 className="text-xl font-semibold mb-6 text-yellow-500">Assessment Breakdown</h2>
             <div className="space-y-4">
               {stats?.assessmentStats?.map((as: any) => (
-                <div key={as.id} className="border-b border-neutral-800 pb-4 last:border-0">
-                  <p className="font-medium text-gray-200 mb-2 truncate">{as.title}</p>
+                <div key={as.id} className="border-b border-gray-200 pb-4 last:border-0">
+                  <p className="font-medium text-gray-900 mb-2 truncate">{as.title}</p>
                   <div className="flex justify-between text-xs">
                     <span className="text-green-400">Pass: {as.pass_count}</span>
                     <span className="text-red-400">Fail: {as.fail_count}</span>
                     <span className="text-gray-500">Total: {as.total_attempts}</span>
                   </div>
-                  <div className="w-full bg-neutral-800 h-1.5 rounded-full mt-2 overflow-hidden flex">
+                  <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden flex">
                     <div 
                       className="bg-green-500 h-full" 
                       style={{ width: `${(as.pass_count / (as.total_attempts || 1)) * 100}%` }}
@@ -132,12 +132,12 @@ export default function AdminPage() {
           </div>
 
           {/* Recent Results */}
-          <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-            <div className="p-6 border-b border-neutral-800 flex justify-between items-center">
+          <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-yellow-500">Recent Results</h2>
               <button 
                 onClick={handleExportPassed}
-                className="text-xs bg-neutral-800 hover:bg-neutral-700 text-gray-300 px-3 py-1.5 rounded border border-neutral-700 flex items-center gap-2 transition-colors"
+                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded border border-gray-300 flex items-center gap-2 transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -148,7 +148,7 @@ export default function AdminPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-neutral-800/50 text-gray-400 text-[10px] uppercase tracking-wider">
+                  <tr className="bg-gray-100/50 text-gray-600 text-[10px] uppercase tracking-wider">
                     <th className="px-6 py-3 font-bold">Candidate</th>
                     <th className="px-6 py-3 font-bold">Assessment</th>
                     <th className="px-6 py-3 font-bold">Score</th>
@@ -156,19 +156,19 @@ export default function AdminPage() {
                     <th className="px-6 py-3 font-bold text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-800">
+                <tbody className="divide-y divide-gray-200">
                   {stats?.recentResults?.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No recent activity.</td>
                     </tr>
                   ) : (
                     stats?.recentResults?.map((r: any) => (
-                      <tr key={r.id} className="hover:bg-neutral-800/30 transition-colors">
+                      <tr key={r.id} className="hover:bg-gray-100/30 transition-colors">
                         <td className="px-6 py-4">
-                          <p className="text-sm font-medium text-white">{r.email}</p>
+                          <p className="text-sm font-medium text-gray-900">{r.email}</p>
                           <p className="text-[10px] text-gray-500">{r.full_name || "-"}</p>
                         </td>
-                        <td className="px-6 py-4 text-xs text-gray-300 max-w-[150px] truncate">{r.assessment_title}</td>
+                        <td className="px-6 py-4 text-xs text-gray-700 max-w-[150px] truncate">{r.assessment_title}</td>
                         <td className="px-6 py-4 text-sm font-mono">{r.final_score}</td>
                         <td className="px-6 py-4">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
@@ -212,9 +212,10 @@ function formatDateForUi(value: string | null): string {
 
 function StatCard({ title, value, color }: { title: string, value: any, color: string }) {
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 shadow-lg">
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
       <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">{title}</p>
       <p className={`text-3xl font-bold ${color}`}>{value ?? 0}</p>
     </div>
   );
 }
+

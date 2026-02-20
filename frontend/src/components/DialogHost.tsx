@@ -58,10 +58,10 @@ export default function DialogHost() {
   };
 
   return (
-    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl border border-neutral-700 bg-neutral-900 p-6 shadow-2xl">
-        <h2 className="text-lg font-bold text-white">{active.title ?? "Confirm Action"}</h2>
-        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-300">{active.message}</p>
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-gray-900/30 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-2xl border border-gray-300 bg-white p-6 shadow-2xl">
+        <h2 className="text-lg font-bold text-gray-900">{active.title ?? "Confirm Action"}</h2>
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-600">{active.message}</p>
 
         {active.kind === "prompt" && (
           <input
@@ -70,7 +70,7 @@ export default function DialogHost() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={active.inputPlaceholder ?? ""}
-            className="mt-4 w-full rounded-lg border border-neutral-700 bg-neutral-950 px-4 py-2 text-white outline-none ring-yellow-500 focus:ring-2"
+            className="mt-4 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-900 outline-none ring-yellow-500 focus:ring-2"
           />
         )}
 
@@ -78,7 +78,7 @@ export default function DialogHost() {
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition-colors hover:bg-neutral-700"
+            className="rounded-lg border border-gray-300 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-200"
           >
             {labels.cancel}
           </button>
@@ -98,3 +98,4 @@ export default function DialogHost() {
     </div>
   );
 }
+

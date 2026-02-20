@@ -79,3 +79,19 @@ export async function me(req: AuthRequest, res: Response) {
     full_name: user.full_name,
   });
 }
+
+/**
+ * LOGOUT
+ */
+export async function logout(_req: Request, res: Response) {
+  const isProd = config.NODE_ENV === "production";
+
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    domain: isProd ? config.COOKIE_DOMAIN : undefined,
+  });
+
+  return res.json({ message: "Logout successful" });
+}

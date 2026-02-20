@@ -31,10 +31,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900">
       <form
         onSubmit={handleLogin}
-        className="bg-neutral-900 p-8 rounded-xl w-full max-w-md border border-neutral-800"
+        className="bg-white p-8 rounded-xl w-full max-w-md border border-gray-200"
       >
         <h1 className="text-2xl font-bold mb-6 text-center">
           Start Assessment
@@ -52,7 +52,7 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full p-3 rounded bg-neutral-800 border border-neutral-700 mb-4 focus:outline-none focus:border-yellow-500"
+          className="w-full p-3 rounded bg-gray-100 border border-gray-300 mb-4 focus:outline-none focus:border-yellow-500"
         />
 
         <button
@@ -65,3 +65,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -31,56 +31,56 @@ export default function NewAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-2xl mx-auto">
-        <Link href="/admin/assessments" className="text-gray-400 hover:text-white mb-6 inline-block">
+        <Link href="/admin/assessments" className="text-gray-600 hover:text-gray-900 mb-6 inline-block">
           ← Back to Assessments
         </Link>
         <h1 className="text-3xl font-bold mb-8">Create New Assessment</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-900 p-8 rounded-xl border border-neutral-800">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl border border-gray-200">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Title</label>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Title</label>
             <input
               required
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
               placeholder="e.g. Full Stack Developer Assessment"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Duration (Minutes)</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Duration (Minutes)</label>
               <input
                 required
                 type="number"
                 value={formData.duration_minutes}
                 onChange={(e) => setFormData({ ...formData, duration_minutes: Number(e.target.value) })}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Assessment Code (Optional)</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Assessment Code (Optional)</label>
               <input
                 type="text"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                 placeholder="Auto-generated if empty"
                 maxLength={10}
               />
             </div>
           </div>
 
-          <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-6 space-y-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 space-y-6">
             <h2 className="text-lg font-semibold text-yellow-500 flex items-center gap-2">
               🏆 Pass/Fail Criteria
             </h2>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Pass Percentage (%)</label>
+              <label className="block text-sm font-medium text-gray-600 mb-2">Pass Percentage (%)</label>
               <input
                 required
                 type="number"
@@ -88,7 +88,7 @@ export default function NewAssessmentPage() {
                 max="100"
                 value={formData.pass_percentage}
                 onChange={(e) => setFormData({ ...formData, pass_percentage: Number(e.target.value) })}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
               />
               <p className="text-xs text-gray-500 mt-2">
                 Candidates must score at least this percentage of the total marks to pass.
@@ -108,3 +108,4 @@ export default function NewAssessmentPage() {
     </div>
   );
 }
+

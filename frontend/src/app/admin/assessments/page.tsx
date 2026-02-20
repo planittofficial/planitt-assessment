@@ -44,11 +44,11 @@ export default function AdminAssessmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-6xl mx-auto">
         <Link
           href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
         >
           ← Back to Dashboard
         </Link>
@@ -65,12 +65,12 @@ export default function AdminAssessmentsPage() {
       {assessments.map((a) => (
         <div
           key={a.id}
-          className="p-4 border border-neutral-800 rounded mb-4 flex justify-between"
+          className="p-4 border border-gray-200 rounded mb-4 flex justify-between"
         >
           <div>
             <p className="font-semibold">{a.title}</p>
             <div className="flex gap-2 items-center mt-1">
-              <span className="text-xs bg-neutral-800 px-2 py-0.5 rounded text-neutral-400">
+              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-500">
                 Code: <span className="text-yellow-500 font-mono font-bold uppercase">{a.code}</span>
               </span>
               <span
@@ -97,7 +97,7 @@ export default function AdminAssessmentsPage() {
             </button>
             <Link
               href={`/admin/assessments/${a.id}/edit`}
-              className="text-gray-400 hover:text-white"
+              className="text-gray-600 hover:text-gray-900"
             >
               Manage Questions
             </Link>
@@ -114,3 +114,4 @@ export default function AdminAssessmentsPage() {
     </div>
   );
 }
+

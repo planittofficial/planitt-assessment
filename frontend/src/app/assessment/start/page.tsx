@@ -22,7 +22,7 @@ export default function StartAssessmentPage() {
 
   if (authLoading || user?.role?.toUpperCase() === "ADMIN") {
     return (
-      <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
           <p>Loading...</p>
@@ -51,13 +51,13 @@ export default function StartAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
-      <div className="bg-neutral-900 p-8 rounded-xl border border-neutral-800 max-w-md w-full text-center">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-xl border border-gray-200 max-w-md w-full text-center">
         <h1 className="text-2xl font-bold mb-4">
           Enter Assessment Code
         </h1>
 
-        <p className="text-gray-400 mb-6">
+        <p className="text-gray-600 mb-6">
           Please enter the unique code provided to you to start the assessment.
         </p>
 
@@ -72,7 +72,7 @@ export default function StartAssessmentPage() {
           placeholder="Code (e.g. ABCDEF)"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="w-full p-3 rounded bg-neutral-800 border border-neutral-700 mb-6 focus:outline-none focus:border-yellow-500 text-center font-mono text-xl tracking-widest"
+          className="w-full p-3 rounded bg-gray-100 border border-gray-300 mb-6 focus:outline-none focus:border-yellow-500 text-center font-mono text-xl tracking-widest"
           maxLength={10}
         />
 
@@ -86,15 +86,16 @@ export default function StartAssessmentPage() {
 
         <Link
           href="/results"
-          className="block w-full mt-3 bg-neutral-800 text-white px-6 py-3 rounded font-semibold hover:bg-neutral-700 transition"
+          className="block w-full mt-3 bg-gray-100 text-gray-900 px-6 py-3 rounded font-semibold hover:bg-gray-200 transition"
         >
           View Results
         </Link>
 
-        <p className="mt-4 text-xs text-neutral-500">
+        <p className="mt-4 text-xs text-gray-500">
           Once started, fullscreen mode will be enforced and the timer begins.
         </p>
       </div>
     </div>
   );
 }
+

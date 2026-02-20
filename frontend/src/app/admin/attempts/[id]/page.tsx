@@ -37,30 +37,30 @@ export default function AttemptReviewPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-white">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
       <p className="animate-pulse">Loading answers...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
-        <Link href={`/admin/assessments`} className="text-gray-400 hover:text-white transition-colors mb-6 block text-sm">
+        <Link href={`/admin/assessments`} className="text-gray-600 hover:text-gray-900 transition-colors mb-6 block text-sm">
           ← Back to Assessments
         </Link>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Review Descriptive Answers</h1>
           {attempt && (
-            <p className="text-gray-400">
-              Attempt ID: <span className="text-gray-200 font-mono">{id}</span> • User: <span className="text-gray-200">{attempt.email}</span>
+            <p className="text-gray-600">
+              Attempt ID: <span className="text-gray-900 font-mono">{id}</span> • User: <span className="text-gray-900">{attempt.email}</span>
             </p>
           )}
         </div>
 
         {answers.length === 0 ? (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-12 text-center">
-            <p className="text-gray-400">No descriptive answers to grade for this attempt.</p>
+          <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+            <p className="text-gray-600">No descriptive answers to grade for this attempt.</p>
             <Link href={`/admin/attempts/${id}/results`} className="text-yellow-500 mt-4 inline-block hover:underline">
               View Detailed Results →
             </Link>
@@ -70,18 +70,18 @@ export default function AttemptReviewPage() {
             {answers.map((a) => (
               <div
                 key={a.id}
-                className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 transition-all hover:border-neutral-700"
+                className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300"
               >
                 <div className="flex justify-between items-start mb-4">
                   <p className="text-lg font-medium flex-1 pr-8">{a.question_text}</p>
-                  <div className="bg-neutral-800 px-3 py-1 rounded text-xs font-bold text-gray-400">
+                  <div className="bg-gray-100 px-3 py-1 rounded text-xs font-bold text-gray-600">
                     Max Marks: {a.marks}
                   </div>
                 </div>
 
-                <div className="bg-neutral-950 border border-neutral-800 rounded-lg p-5 mb-6">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
                   <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">User Response</p>
-                  <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">{a.answer}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{a.answer}</p>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -104,7 +104,7 @@ export default function AttemptReviewPage() {
                         if (entered === null) return;
                         grade(a.id, Number(entered));
                       }}
-                      className="bg-neutral-800 hover:bg-neutral-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-neutral-700"
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-gray-300"
                     >
                       Partial Marks
                     </button>

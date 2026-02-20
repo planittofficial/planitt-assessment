@@ -12,14 +12,14 @@ export default function AssessmentRulesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-neutral-800 bg-neutral-900 p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8">
         <h1 className="mb-3 text-3xl font-bold">Assessment Rules</h1>
-        <p className="mb-6 text-neutral-400">
+        <p className="mb-6 text-gray-500">
           Read these instructions before starting your assessment.
         </p>
 
-        <ol className="mb-8 list-decimal space-y-3 pl-6 text-neutral-200">
+        <ol className="mb-8 list-decimal space-y-3 pl-6 text-gray-700">
           {rules.map((rule) => (
             <li key={rule}>{rule}</li>
           ))}
@@ -34,7 +34,7 @@ export default function AssessmentRulesPage() {
           </Link>
           <Link
             href="/results"
-            className="rounded-lg border border-neutral-700 px-5 py-3 font-semibold text-neutral-200 hover:bg-neutral-800"
+            className="rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-100"
           >
             View Results
           </Link>
@@ -43,3 +43,4 @@ export default function AssessmentRulesPage() {
     </div>
   );
 }
+

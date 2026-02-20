@@ -258,29 +258,29 @@ export default function EditAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
         <Link
           href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-black/40 transition-all hover:-translate-y-0.5 hover:bg-neutral-800 active:translate-y-0"
+          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
         >
           ← Back to Dashboard
         </Link>
         <div className="mb-6">
-          <Link href="/admin/assessments" className="text-gray-400 hover:text-white transition-colors text-sm">
+          <Link href="/admin/assessments" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
             ← Back to Assessments
           </Link>
         </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Manage Questions</h1>
           <div className="flex gap-3">
-            <label className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg border border-neutral-700 transition-colors flex items-center gap-2 cursor-pointer text-sm">
+            <label className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center gap-2 cursor-pointer text-sm">
               <span>📁 Upload JSON</span>
               <input type="file" accept=".json" onChange={handleJsonUpload} className="hidden" />
             </label>
             <button
               onClick={() => setShowSmartPaste(!showSmartPaste)}
-              className="bg-neutral-800 hover:bg-neutral-700 text-white px-4 py-2 rounded-lg border border-neutral-700 transition-colors flex items-center gap-2 text-sm"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center gap-2 text-sm"
             >
               {showSmartPaste ? "← Manual Mode" : "✨ Smart Paste"}
             </button>
@@ -288,24 +288,24 @@ export default function EditAssessmentPage() {
         </div>
 
         {assessment && (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 mb-8 shadow-xl">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-xl">
             <h2 className="text-xl font-bold mb-6 text-yellow-500 flex items-center gap-2">
               🏆 Pass/Fail Criteria
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Pass Percentage (%)</label>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Pass Percentage (%)</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={assessment.pass_percentage}
                   onChange={(e) => setAssessment({ ...assessment, pass_percentage: Number(e.target.value) })}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Assessment Status</label>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Assessment Status</label>
                 <select
                   value={
                     typeof assessment.status === "boolean"
@@ -317,7 +317,7 @@ export default function EditAssessmentPage() {
                         : "INACTIVE"
                   }
                   onChange={(e) => setAssessment({ ...assessment, status: e.target.value })}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Inactive</option>
@@ -325,7 +325,7 @@ export default function EditAssessmentPage() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 mb-1 uppercase font-bold tracking-widest">Calculated Passing Marks</p>
-                <p className="text-xl font-bold text-white">
+                <p className="text-xl font-bold text-gray-900">
                   {((assessment.total_marks * assessment.pass_percentage) / 100).toFixed(2)} 
                   <span className="text-sm font-normal text-gray-500 ml-2">/ {assessment.total_marks}</span>
                 </p>
@@ -343,7 +343,7 @@ export default function EditAssessmentPage() {
 
         {showSmartPaste ? (
           <div className="space-y-8">
-            <div className="bg-neutral-900 p-8 rounded-xl border border-neutral-800 shadow-xl">
+            <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-xl">
               <h2 className="text-xl font-bold mb-4 text-yellow-500">Smart Paste</h2>
               <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                 Paste your questions below or upload a JSON file. Format: <br/>
@@ -353,26 +353,26 @@ export default function EditAssessmentPage() {
               <textarea
                 value={smartPasteText}
                 onChange={(e) => setSmartPasteText(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-4 focus:outline-none focus:border-yellow-500 transition-colors h-64 font-mono text-sm mb-4"
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-4 focus:outline-none focus:border-yellow-500 transition-colors h-64 font-mono text-sm mb-4"
                 placeholder="1. What is React?&#10;A) Library&#10;B) Framework&#10;Correct: A&#10;Marks: 1"
               />
               <button
                 onClick={handleSmartPasteParse}
-                className="bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-2 rounded-lg font-bold transition-all border border-neutral-700 w-full"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2 rounded-lg font-bold transition-all border border-gray-300 w-full"
               >
                 Parse Questions
               </button>
             </div>
 
             {parsedQuestions.length > 0 && (
-              <div className="bg-neutral-900 p-8 rounded-xl border border-neutral-800 shadow-xl">
+              <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-xl">
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                   Parsed Preview
                   <span className="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded-full">{parsedQuestions.length}</span>
                 </h3>
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                   {parsedQuestions.map((q, i) => (
-                    <div key={i} className="bg-neutral-950 p-4 rounded-lg border border-neutral-800">
+                    <div key={i} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <p className="font-medium text-sm mb-2">{i+1}. {q.question_text}</p>
                       <div className="flex gap-4 text-[10px] text-gray-500 uppercase font-bold">
                         <span>{q.question_type}</span>
@@ -385,7 +385,7 @@ export default function EditAssessmentPage() {
                 <div className="flex gap-3 mt-8">
                    <button
                     onClick={() => setParsedQuestions([])}
-                    className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-3 rounded-lg transition-all border border-neutral-700"
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold py-3 rounded-lg transition-all border border-gray-300"
                   >
                     Clear
                   </button>
@@ -401,47 +401,47 @@ export default function EditAssessmentPage() {
             )}
           </div>
         ) : (
-          <div className="bg-neutral-900 p-8 rounded-xl border border-neutral-800 mb-12 shadow-xl">
+          <div className="bg-white p-8 rounded-xl border border-gray-200 mb-12 shadow-xl">
             <h2 className="text-xl font-bold mb-6 text-yellow-500">Add New Question</h2>
             <form onSubmit={handleAddQuestion} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Question Text</label>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Question Text</label>
                 <textarea
                   required
                   value={newQuestion.question_text}
                   onChange={(e) => setNewQuestion({ ...newQuestion, question_text: e.target.value })}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors h-24"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors h-24"
                   placeholder="Enter the question..."
                 />
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Type</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Type</label>
                   <select
                     value={newQuestion.question_type}
                     onChange={(e) => setNewQuestion({ ...newQuestion, question_type: e.target.value as "MCQ" | "DESCRIPTIVE" })}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                   >
                     <option value="MCQ">Multiple Choice (MCQ)</option>
                     <option value="DESCRIPTIVE">Descriptive</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Marks</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Marks</label>
                   <input
                     type="number"
                     required
                     value={newQuestion.marks}
                     onChange={(e) => setNewQuestion({ ...newQuestion, marks: Number(e.target.value) })}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Section</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Section</label>
                   <select
                     value={newQuestion.section}
                     onChange={(e) => setNewQuestion({ ...newQuestion, section: e.target.value })}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                   >
                     <option value="Quantitative">Quantitative</option>
                     <option value="Verbal">Verbal</option>
@@ -452,7 +452,7 @@ export default function EditAssessmentPage() {
               </div>
               {newQuestion.question_type === "MCQ" && (
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-gray-400">Options & Correct Answer</label>
+                  <label className="block text-sm font-medium text-gray-600">Options & Correct Answer</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {newQuestion.options.map((opt, idx) => (
                       <div key={idx} className="flex items-center gap-2">
@@ -469,7 +469,7 @@ export default function EditAssessmentPage() {
                           type="text"
                           value={opt}
                           onChange={(e) => handleOptionChange(idx, e.target.value)}
-                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                          className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>
@@ -492,7 +492,7 @@ export default function EditAssessmentPage() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold flex items-center gap-3">
               Questions 
-              <span className="text-sm bg-neutral-800 text-gray-400 px-3 py-1 rounded-full">{questions.length}</span>
+              <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{questions.length}</span>
             </h2>
             {questions.length > 0 && (
               <button
@@ -510,14 +510,14 @@ export default function EditAssessmentPage() {
               <p className="text-gray-500 italic">No questions added yet.</p>
             ) : (
               questions.map((q, idx) => (
-                <div key={q.id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 transition-all hover:border-neutral-700">
+                <div key={q.id} className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <span className="text-xs font-mono text-gray-500 block mb-1">Question {idx + 1} • {q.question_type}</span>
                       <p className="text-lg font-medium">{q.question_text}</p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className="bg-neutral-800 px-3 py-1 rounded text-sm font-bold text-yellow-500">
+                      <span className="bg-gray-100 px-3 py-1 rounded text-sm font-bold text-yellow-500">
                         {q.marks} Marks
                       </span>
                       <button
@@ -536,7 +536,7 @@ export default function EditAssessmentPage() {
                           className={`px-4 py-2 rounded-lg text-sm border ${
                             o.text === q.correct_answer 
                               ? "bg-green-500/10 border-green-500/50 text-green-400" 
-                              : "bg-neutral-950 border-neutral-800 text-gray-400"
+                              : "bg-gray-50 border-gray-200 text-gray-600"
                           }`}
                         >
                           {o.text}

@@ -80,7 +80,8 @@ if (timerCheck.expired) {
             `UPDATE attempts
              SET status = $2,
                  ${submittedColumn} = NOW()
-                 ${hasAutoSubmitted ? ", auto_submitted = true" : ""}
+                 ${hasAutoSubmitted ? ", auto_submitted = true" : ""},
+                 result = 'FAIL'
              WHERE id = $1 AND LOWER(status) IN ('started', 'in_progress')`,
             [normalizedAttemptId, status]
           );
@@ -95,7 +96,8 @@ if (timerCheck.expired) {
             await pool.query(
               `UPDATE attempts
                SET status = $2,
-                   ${submittedColumn} = NOW()
+                   ${submittedColumn} = NOW(),
+                   result = 'FAIL'
                WHERE id = $1 AND LOWER(status) IN ('started', 'in_progress')`,
               [normalizedAttemptId, status]
             );
@@ -114,12 +116,14 @@ if (timerCheck.expired) {
         message: "Violation logged. Attempt auto-submitted.",
         autoSubmitted: true,
         reason: enforcement.reason,
+        violationCount: enforcement.totalViolations,
       });
     }
 
     return res.status(201).json({
       message: "Violation logged",
       autoSubmitted: false,
+      violationCount: enforcement.totalViolations,
     });
   } catch (error) {
     console.error("❌ logViolation error:", error);
@@ -128,6 +132,49 @@ if (timerCheck.expired) {
         .status(500)
         .json({ message: "Database schema mismatch. Please run latest migrations." });
     }
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function getViolationCount(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { attemptId } = req.params;
+    const userId = req.user.userId;
+
+    if (!attemptId) {
+      return res.status(400).json({ message: "attemptId is required" });
+    }
+
+    if (!isUuid(attemptId)) {
+      return res.status(400).json({ message: "Invalid attemptId" });
+    }
+
+    const attemptResult = await pool.query(
+      `SELECT id FROM attempts WHERE id = $1 AND user_id = $2`,
+      [attemptId, userId]
+    );
+
+    if (attemptResult.rowCount === 0) {
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS violation_count
+       FROM violations
+       WHERE attempt_id = $1`,
+      [attemptId]
+    );
+
+    return res.status(200).json({
+      attemptId,
+      violationCount: Number(countResult.rows[0]?.violation_count || 0),
+    });
+  } catch (error) {
+    console.error("getViolationCount error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }

@@ -35,6 +35,7 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
   const displayName = fullName || email || "Candidate";
   const role = String(user?.role || "").toUpperCase();
   const isAdminRoute = pathname.startsWith("/admin");
+  const isAttemptRoute = pathname.startsWith("/assessment/attempt/");
   const roleBadge = isAdminRoute || role === "ADMIN" ? "A" : "C";
 
   async function handleLogout() {
@@ -55,6 +56,8 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
 
   // Hide on login page and when not authenticated yet.
   if (!user || pathname === "/login") return null;
+  // Hide profile menu while assessment is in progress.
+  if (isAttemptRoute) return null;
   // On admin pages, we render inline manually to avoid overlap with admin action buttons.
   if (!inline && isAdminRoute) return null;
 

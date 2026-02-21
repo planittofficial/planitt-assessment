@@ -7,4 +7,7 @@ export const violationService = {
       body: JSON.stringify({ attemptId, violationType }),
     });
   },
+  getCount(attemptId: string) {
+    return apiFetch(`/api/violations/${attemptId}/count`);
+  },
 };

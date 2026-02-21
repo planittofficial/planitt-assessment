@@ -20,7 +20,11 @@ export default function AttemptPage() {
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes in seconds
   const [selectedSection, setSelectedSection] = useState<string>("Quantitative"); // Quantitative first by default
 
-  useViolation(id);
+  const {
+    violationCount,
+    requireFullscreen,
+    requestAssessmentFullscreen,
+  } = useViolation(id);
 
   const sections = ["Quantitative", "Verbal", "Coding", "Logical"];
 
@@ -135,6 +139,25 @@ export default function AttemptPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+      {requireFullscreen && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white border border-gray-300 rounded-2xl p-6 text-center shadow-2xl">
+            <h2 className="text-xl font-bold mb-2">Fullscreen Required</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              You exited fullscreen mode. To continue the assessment, re-enter fullscreen.
+            </p>
+            <button
+              onClick={requestAssessmentFullscreen}
+              className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all"
+            >
+              Go Fullscreen
+            </button>
+            <p className="text-xs text-gray-500 mt-3">
+              This popup will close only after fullscreen is enabled.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3">
           {/* Section Selector */}
@@ -164,6 +187,13 @@ export default function AttemptPage() {
                   {currentQuestion?.section}
                 </span>
                 <h1 className="text-xl font-bold">Question {currentIndex + 1} of {filteredQuestions.length}</h1>
+                <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${
+                  violationCount >= 2
+                    ? "bg-red-500/10 text-red-500 border-red-500/30"
+                    : "bg-gray-100 text-gray-600 border-gray-300"
+                }`}>
+                  Violations: {violationCount}/3
+                </span>
               </div>
               <div className="w-full bg-gray-100 h-1 mt-2 rounded-full overflow-hidden">
                 <div 

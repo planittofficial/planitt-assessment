@@ -414,6 +414,7 @@ export async function getDescriptiveAnswers(req: Request, res: Response) {
       a.id,
       q.question_text,
       a.${answerColumn} as answer_text,
+      a.${answerColumn} as answer,
       q.marks
     FROM answers a
     JOIN questions q ON q.id = a.question_id

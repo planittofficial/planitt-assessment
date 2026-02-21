@@ -81,7 +81,9 @@ export default function AttemptReviewPage() {
 
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
                   <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-2">User Response</p>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{a.answer}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {a.answer_text ?? a.answer ?? a.user_answer ?? ""}
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between">

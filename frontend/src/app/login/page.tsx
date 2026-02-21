@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { authService } from "@/services/auth.service";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +37,17 @@ export default function LoginPage() {
         onSubmit={handleLogin}
         className="bg-white p-8 rounded-xl w-full max-w-md border border-gray-200"
       >
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/planitt-logo.png"
+            alt="Planitt logo"
+            width={180}
+            height={60}
+            priority
+            className="h-auto w-auto max-h-16"
+          />
+        </div>
+
         <h1 className="text-2xl font-bold mb-6 text-center">
           Start Assessment
         </h1>
@@ -65,4 +77,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

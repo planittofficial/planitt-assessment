@@ -6,6 +6,7 @@ import Link from "next/link";
 import { attemptService } from "@/services/attempt.service";
 import { enterFullscreen } from "@/hooks/useFullscreen";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api";
 
 export default function StartAssessmentPage() {
   const router = useRouter();
@@ -44,8 +45,16 @@ export default function StartAssessmentPage() {
       // Only force fullscreen after the attempt is successfully created.
       enterFullscreen();
       router.push(`/assessment/attempt/${res.attemptId}`);
-    } catch (err: any) {
-      const message = String(err?.message || "");
+    } catch (err: unknown) {
+      const message = String((err as any)?.message || "");
+      const attemptId =
+        err instanceof ApiError ? String(err.data?.attemptId || "") : "";
+
+      if (message.toLowerCase().includes("active attempt already exists") && attemptId) {
+        router.push(`/assessment/attempt/${attemptId}`);
+        return;
+      }
+
       if (message.toLowerCase().includes("no questions configured")) {
         setError("This assessment is not ready yet. Please contact your administrator.");
       } else {

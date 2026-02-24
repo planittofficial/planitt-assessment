@@ -317,7 +317,7 @@ export default function CandidatesPage() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

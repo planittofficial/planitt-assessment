@@ -258,22 +258,23 @@ export default function EditAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
-        >
-          ← Back to Dashboard
-        </Link>
-        <div className="mb-6">
-          <Link href="/admin/assessments" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
-            ← Back to Assessments
-          </Link>
-        </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Manage Questions</h1>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-sm font-semibold"
+            >
+              Return to Dashboard
+            </Link>
+            <Link
+              href="/admin/assessments"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-sm font-semibold"
+            >
+              Back to Assessments
+            </Link>
             <label className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center gap-2 cursor-pointer text-sm">
               <span>📁 Upload JSON</span>
               <input type="file" accept=".json" onChange={handleJsonUpload} className="hidden" />
@@ -551,6 +552,6 @@ export default function EditAssessmentPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

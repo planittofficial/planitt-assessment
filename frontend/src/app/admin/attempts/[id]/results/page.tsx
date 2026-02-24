@@ -46,7 +46,7 @@ export default function AttemptResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
+      <div className="flex items-center justify-center p-20 text-gray-900">
         <p className="animate-pulse">Loading results...</p>
       </div>
     );
@@ -54,7 +54,7 @@ export default function AttemptResultsPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
+      <div className="flex items-center justify-center p-20 text-gray-900">
         <p>{error || "Attempt not found."}</p>
       </div>
     );
@@ -68,7 +68,7 @@ export default function AttemptResultsPage() {
   const hasValidDuration = Number.isFinite(startedTime) && Number.isFinite(submittedTime) && submittedTime >= startedTime;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}
@@ -185,7 +185,6 @@ export default function AttemptResultsPage() {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </>
   );
 }

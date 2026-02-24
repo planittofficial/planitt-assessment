@@ -37,17 +37,14 @@ export default function AttemptReviewPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-900">
+    <div className="flex items-center justify-center p-20 text-gray-900">
       <p className="animate-pulse">Loading answers...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-4xl mx-auto">
-        <Link href={`/admin/assessments`} className="text-gray-600 hover:text-gray-900 transition-colors mb-6 block text-sm">
-          ← Back to Assessments
-        </Link>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Review Descriptive Answers</h1>
@@ -122,7 +119,6 @@ export default function AttemptReviewPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

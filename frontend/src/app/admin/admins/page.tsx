@@ -170,6 +170,6 @@ export default function AdminsPage() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

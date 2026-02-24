@@ -102,7 +102,7 @@ export default function NewAssessmentPage() {
           </button>
         </form>
       </div>
-    </div>
+    </>
   );
 }
 

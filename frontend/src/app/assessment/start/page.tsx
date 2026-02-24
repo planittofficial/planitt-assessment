@@ -40,12 +40,17 @@ export default function StartAssessmentPage() {
     setLoading(true);
     setError("");
     try {
-      enterFullscreen();
       const res = await attemptService.start(code);
+      // Only force fullscreen after the attempt is successfully created.
+      enterFullscreen();
       router.push(`/assessment/attempt/${res.attemptId}`);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Invalid code or unable to start assessment");
+      const message = String(err?.message || "");
+      if (message.toLowerCase().includes("no questions configured")) {
+        setError("This assessment is not ready yet. Please contact your administrator.");
+      } else {
+        setError(message || "Invalid code or unable to start assessment");
+      }
       setLoading(false);
     }
   }

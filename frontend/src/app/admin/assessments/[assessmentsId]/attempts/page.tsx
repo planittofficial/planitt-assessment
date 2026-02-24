@@ -103,9 +103,9 @@ export default function AdminAssessmentAttemptsPage() {
     document.body.removeChild(link);
   };
 
-  if (adminLoading || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center p-20">
         <p className="text-gray-900 text-lg animate-pulse">Loading...</p>
       </div>
     );
@@ -113,29 +113,17 @@ export default function AdminAssessmentAttemptsPage() {
 
   if (attempts.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center text-gray-900">
+      <div className="flex flex-col items-center justify-center p-20 text-gray-900">
         <p className="text-xl mb-4 text-gray-600">No attempts found for this assessment.</p>
-        <Link href="/admin/assessments" className="text-yellow-500 hover:underline">
-          ← Back to Assessments
-        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-6xl mx-auto">
-        <Link
-          href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
-        >
-          ← Back to Dashboard
-        </Link>
         <div className="flex justify-between items-center mb-8">
           <div>
-            <Link href="/admin/assessments" className="text-gray-600 hover:text-gray-900 transition-colors text-sm mb-2 block">
-              ← Back to Assessments
-            </Link>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Assessment Attempts</h1>
             <p className="text-gray-600 mt-1 text-sm">Review student performance and grade descriptive answers.</p>
           </div>
@@ -243,7 +231,6 @@ export default function AdminAssessmentAttemptsPage() {
           ))
         )}
       </div>
-    </div>
-  </div>
-);
+    </>
+  );
 }

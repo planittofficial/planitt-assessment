@@ -32,4 +32,6 @@ router.post("/candidates/bulk", admin_controller_1.bulkAddCandidates);
 router.delete("/candidates/:id", admin_controller_1.deleteCandidate);
 router.post("/candidates/bulk-delete", admin_controller_1.bulkDeleteCandidates);
 router.get("/dashboard-stats", admin_controller_1.getDashboardStats);
+router.get("/admins", admin_controller_1.getAdmins);
+router.post("/admins", admin_controller_1.addAdmin);
 exports.default = router;

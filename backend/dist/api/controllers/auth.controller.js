@@ -5,7 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = login;
 exports.me = me;
-const db_1 = __importDefault(require("../../config/db"));
+exports.logout = logout;
+const User_1 = __importDefault(require("../../models/User"));
 const jwt_1 = require("../../utils/jwt");
 const config_1 = __importDefault(require("../../config"));
 /**
@@ -16,22 +17,18 @@ async function login(req, res) {
     if (!email) {
         return res.status(400).json({ message: "Email is required" });
     }
-    // 1️⃣ Find user
-    const userResult = await db_1.default.query("SELECT id, role, email, full_name FROM users WHERE email = $1", [email]);
-    if (userResult.rowCount === 0) {
+    const user = await User_1.default.findOne({ email });
+    if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
     }
-    const user = userResult.rows[0];
-    // 2️⃣ Sign JWT
     const token = (0, jwt_1.signJwt)({
-        userId: user.id,
+        userId: user._id.toString(),
         role: user.role,
     });
-    // 3️⃣ Set HttpOnly Cookie
     const isProd = config_1.default.NODE_ENV === "production";
     res.cookie("access_token", token, {
         httpOnly: true,
-        secure: false, // localhost
+        secure: false,
         sameSite: "lax",
         domain: isProd ? config_1.default.COOKIE_DOMAIN : undefined,
         maxAge: 4 * 60 * 60 * 1000,
@@ -50,17 +47,27 @@ async function me(req, res) {
     if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
     }
-    const userResult = await db_1.default.query(`SELECT id, role, email, full_name
-     FROM users
-     WHERE id = $1`, [req.user.userId]);
-    if (userResult.rowCount === 0) {
+    const user = await User_1.default.findById(req.user.userId);
+    if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
     }
-    const user = userResult.rows[0];
     return res.json({
-        userId: user.id,
+        userId: user._id.toString(),
         role: user.role,
         email: user.email,
         full_name: user.full_name,
     });
+}
+/**
+ * LOGOUT
+ */
+async function logout(_req, res) {
+    const isProd = config_1.default.NODE_ENV === "production";
+    res.clearCookie("access_token", {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        domain: isProd ? config_1.default.COOKIE_DOMAIN : undefined,
+    });
+    return res.json({ message: "Logout successful" });
 }

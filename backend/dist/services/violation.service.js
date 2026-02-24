@@ -4,32 +4,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkAutoSubmit = checkAutoSubmit;
-const db_1 = __importDefault(require("../config/db"));
+const Violation_1 = __importDefault(require("../models/Violation"));
 async function checkAutoSubmit(attemptId) {
-    const result = await db_1.default.query(`SELECT violation_type, COUNT(*) as count
-     FROM violations
-     WHERE attempt_id = $1
-     GROUP BY violation_type`, [attemptId]);
-    let totalViolations = 0;
-    for (const row of result.rows) {
-        const count = Number(row.count);
-        totalViolations += count;
-        // 🚨 Immediate auto-submit for auto-typer
-        if (row.violation_type === "AUTO_TYPER_DETECTED") {
-            return { autoSubmit: true, reason: "AUTO_TYPER_DETECTED" };
-        }
-        // 🚨 Fullscreen exit rule (3 strikes)
-        if (row.violation_type === "FULLSCREEN_EXIT" && count >= 3) {
-            return { autoSubmit: true, reason: "FULLSCREEN_EXIT_LIMIT" };
-        }
-        // 🚨 Tab switching rule (3 strikes)
-        if (row.violation_type === "TAB_SWITCH" && count >= 3) {
-            return { autoSubmit: true, reason: "TAB_SWITCH_LIMIT" };
+    const violations = await Violation_1.default.find({ attempt_id: attemptId });
+    const totalViolations = violations.length;
+    for (const violation of violations) {
+        if (violation.violation_type === "AUTO_TYPER_DETECTED") {
+            return { autoSubmit: true, reason: "AUTO_TYPER_DETECTED", totalViolations };
         }
     }
-    // 🚨 Total violations rule
-    if (totalViolations >= 5) {
-        return { autoSubmit: true, reason: "TOTAL_VIOLATION_LIMIT" };
+    if (totalViolations >= 3) {
+        return { autoSubmit: true, reason: "TOTAL_VIOLATION_LIMIT", totalViolations };
     }
-    return { autoSubmit: false };
+    return { autoSubmit: false, totalViolations };
 }

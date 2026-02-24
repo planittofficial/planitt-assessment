@@ -35,7 +35,7 @@ app.use((err, req, res, _next) => {
 // ---------- Start Server AFTER DB Ready ----------
 async function startServer() {
     try {
-        await db_1.default.query("SELECT 1");
+        await (0, db_1.default)();
         console.log("🚀 Database connected");
         app.listen(config_1.default.PORT, () => {
             console.log(`🚀 Server running on port ${config_1.default.PORT} (${config_1.default.NODE_ENV})`);
@@ -43,7 +43,7 @@ async function startServer() {
     }
     catch (error) {
         console.error("❌ Database connection failed:", error);
-        process.exit(1); // VERY IMPORTANT
+        process.exit(1);
     }
 }
 startServer();

@@ -154,3 +154,20 @@ export const bulkDeleteCandidates = (ids: (string | number)[]) => {
 export const getDashboardStats = () => {
   return apiFetch("/api/admin/dashboard-stats");
 };
+
+export const getAdmins = () => {
+  return apiFetch("/api/admin/admins");
+};
+
+export const addAdmin = (payload: { email: string; full_name?: string }) => {
+  return apiFetch("/api/admin/admins", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const deleteAdmin = (id: string | number) => {
+  return apiFetch(`/api/admin/admins/${id}`, {
+    method: "DELETE",
+  });
+};

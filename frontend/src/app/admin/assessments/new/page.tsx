@@ -31,11 +31,8 @@ export default function NewAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-2xl mx-auto">
-        <Link href="/admin/assessments" className="text-gray-600 hover:text-gray-900 mb-6 inline-block">
-          ← Back to Assessments
-        </Link>
         <h1 className="text-3xl font-bold mb-8">Create New Assessment</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl border border-gray-200">

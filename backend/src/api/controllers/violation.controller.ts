@@ -1,15 +1,11 @@
 import { Response } from "express";
-import pool from "../../config/db";
+import Attempt from "../../models/Attempt";
+import Violation from "../../models/Violation";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { checkAutoSubmit } from "../../services/violation.service";
 import { enforceTimeLimit } from "../../services/timer.service";
-import { isUuid } from "../../utils/validation";
 import { isActiveAttemptStatus } from "../../utils/attempt-status";
-import {
-  getAttemptsSubmittedColumn,
-  hasAttemptsAutoSubmittedColumn,
-} from "../../utils/attempt-schema";
-
+import mongoose from "mongoose";
 
 export async function logViolation(req: AuthRequest, res: Response) {
   try {
@@ -19,8 +15,6 @@ export async function logViolation(req: AuthRequest, res: Response) {
 
     const { attemptId, violationType } = req.body;
     const userId = req.user.userId;
-    const submittedColumn = await getAttemptsSubmittedColumn();
-    const hasAutoSubmitted = await hasAttemptsAutoSubmittedColumn();
 
     if (!attemptId || !violationType) {
       return res.status(400).json({
@@ -28,89 +22,49 @@ export async function logViolation(req: AuthRequest, res: Response) {
       });
     }
 
-    if (!isUuid(attemptId)) {
+    if (!mongoose.Types.ObjectId.isValid(attemptId)) {
       return res.status(400).json({ message: "Invalid attemptId" });
     }
-    const normalizedAttemptId = String(attemptId);
 
-    // 1️⃣ Validate attempt ownership
-    const attemptResult = await pool.query(
-      `SELECT status FROM attempts
-       WHERE id = $1 AND user_id = $2`,
-      [normalizedAttemptId, userId]
-    );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user_id: userId,
+    });
 
-    if (attemptResult.rowCount === 0) {
+    if (!attempt) {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
-    if (!isActiveAttemptStatus(attemptResult.rows[0].status)) {
+    if (!isActiveAttemptStatus(attempt.status)) {
       return res.status(409).json({
         message: "Attempt already submitted",
       });
     }
-    
-const timerCheck = await enforceTimeLimit(normalizedAttemptId);
 
-if (timerCheck.expired) {
-  return res.status(403).json({
-    message: "Time expired. Attempt auto-submitted.",
-    autoSubmitted: true,
-    reason: "TIME_EXPIRED",
-  });
-}
+    const timerCheck = await enforceTimeLimit(attemptId);
 
-    // 2️⃣ Insert violation
-    await pool.query(
-      `INSERT INTO violations (attempt_id, violation_type)
-       VALUES ($1, $2)`,
-      [normalizedAttemptId, violationType]
-    );
+    if (timerCheck.expired) {
+      return res.status(403).json({
+        message: "Time expired. Attempt auto-submitted.",
+        autoSubmitted: true,
+        reason: "TIME_EXPIRED",
+      });
+    }
 
-    // 3️⃣ Check auto-submit rules
-    const enforcement = await checkAutoSubmit(normalizedAttemptId);
+    await Violation.create({
+      attempt_id: attemptId,
+      violation_type: violationType,
+    });
+
+    const enforcement = await checkAutoSubmit(attemptId);
 
     if (enforcement.autoSubmit) {
-      const terminalStatuses = ["terminated", "TERMINATED", "submitted", "SUBMITTED", "completed", "COMPLETED"];
-      let lastConstraintError: any = null;
-
-      for (const status of terminalStatuses) {
-        try {
-          await pool.query(
-            `UPDATE attempts
-             SET status = $2,
-                 ${submittedColumn} = NOW()
-                 ${hasAutoSubmitted ? ", auto_submitted = true" : ""},
-                 result = 'FAIL'
-             WHERE id = $1 AND LOWER(status) IN ('started', 'in_progress')`,
-            [normalizedAttemptId, status]
-          );
-          lastConstraintError = null;
-          break;
-        } catch (error: any) {
-          if (error?.code === "23514") {
-            lastConstraintError = error;
-            continue;
-          }
-          if (error?.code === "42703") {
-            await pool.query(
-              `UPDATE attempts
-               SET status = $2,
-                   ${submittedColumn} = NOW(),
-                   result = 'FAIL'
-               WHERE id = $1 AND LOWER(status) IN ('started', 'in_progress')`,
-              [normalizedAttemptId, status]
-            );
-            lastConstraintError = null;
-            break;
-          }
-          throw error;
-        }
-      }
-
-      if (lastConstraintError) {
-        throw lastConstraintError;
-      }
+      await Attempt.findByIdAndUpdate(attemptId, {
+        status: "terminated",
+        submitted_at: new Date(),
+        auto_submitted: true,
+        result: "FAIL",
+      });
 
       return res.status(200).json({
         message: "Violation logged. Attempt auto-submitted.",
@@ -127,11 +81,6 @@ if (timerCheck.expired) {
     });
   } catch (error) {
     console.error("❌ logViolation error:", error);
-    if ((error as any)?.code === "42703") {
-      return res
-        .status(500)
-        .json({ message: "Database schema mismatch. Please run latest migrations." });
-    }
     return res.status(500).json({ message: "Internal server error" });
   }
 }
@@ -149,29 +98,26 @@ export async function getViolationCount(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: "attemptId is required" });
     }
 
-    if (!isUuid(attemptId)) {
+    if (!mongoose.Types.ObjectId.isValid(attemptId)) {
       return res.status(400).json({ message: "Invalid attemptId" });
     }
 
-    const attemptResult = await pool.query(
-      `SELECT id FROM attempts WHERE id = $1 AND user_id = $2`,
-      [attemptId, userId]
-    );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user_id: userId,
+    });
 
-    if (attemptResult.rowCount === 0) {
+    if (!attempt) {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS violation_count
-       FROM violations
-       WHERE attempt_id = $1`,
-      [attemptId]
-    );
+    const violationCount = await Violation.countDocuments({
+      attempt_id: attemptId,
+    });
 
     return res.status(200).json({
       attemptId,
-      violationCount: Number(countResult.rows[0]?.violation_count || 0),
+      violationCount,
     });
   } catch (error) {
     console.error("getViolationCount error:", error);

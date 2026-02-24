@@ -1,32 +1,30 @@
 import { Request, Response } from "express";
-import pool from "../../config/db";
+import Attempt from "../../models/Attempt";
+import Assessment from "../../models/Assessment";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { getAttemptsSubmittedColumn } from "../../utils/attempt-schema";
 
 export async function getMyResults(req: AuthRequest, res: Response) {
   try {
     const userId = req.user!.userId;
-    const submittedColumn = await getAttemptsSubmittedColumn();
 
-    const result = await pool.query(
-      `
-      SELECT
-        a.id AS attempt_id,
-        ass.title,
-        CASE WHEN COALESCE(a.is_published, false) THEN a.final_score ELSE NULL END AS final_score,
-        ass.total_marks,
-        CASE WHEN COALESCE(a.is_published, false) THEN a.result ELSE NULL END AS result,
-        COALESCE(a.is_published, false) AS is_published,
-        a.${submittedColumn} AS submitted_at
-      FROM attempts a
-      JOIN assessments ass ON ass.id = a.assessment_id
-      WHERE a.user_id = $1
-      ORDER BY a.${submittedColumn} DESC
-      `,
-      [userId]
-    );
+    const attempts = await Attempt.find({ user_id: userId })
+      .populate({
+        path: "assessment_id",
+        select: "title total_marks",
+      })
+      .sort({ submitted_at: -1 });
 
-    res.json(result.rows);
+    const results = attempts.map((attempt) => ({
+      attempt_id: attempt._id,
+      title: (attempt.assessment_id as any)?.title,
+      final_score: attempt.is_published ? attempt.final_score : null,
+      total_marks: (attempt.assessment_id as any)?.total_marks,
+      result: attempt.is_published ? attempt.result : null,
+      is_published: attempt.is_published,
+      submitted_at: attempt.submitted_at,
+    }));
+
+    res.json(results);
   } catch (error) {
     console.error("❌ getMyResults error:", error);
     res.status(500).json({ message: "Internal server error" });

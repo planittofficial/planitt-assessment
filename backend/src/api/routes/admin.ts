@@ -22,6 +22,9 @@ import {
   deleteCandidate,
   bulkDeleteCandidates,
   getDashboardStats,
+  getAdmins,
+  addAdmin,
+  deleteAdmin,
 } from "../controllers/admin.controller";
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middleware";
@@ -58,5 +61,9 @@ router.post("/candidates/bulk", bulkAddCandidates);
 router.delete("/candidates/:id", deleteCandidate);
 router.post("/candidates/bulk-delete", bulkDeleteCandidates);
 router.get("/dashboard-stats", getDashboardStats);
+
+router.get("/admins", getAdmins);
+router.post("/admins", addAdmin);
+router.delete("/admins/:id", deleteAdmin);
 
 export default router;

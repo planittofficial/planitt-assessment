@@ -1,214 +1,120 @@
 import { Response } from "express";
-import pool from "../../config/db";
+import Attempt from "../../models/Attempt";
+import Assessment from "../../models/Assessment";
+import Question from "../../models/Question";
+import Answer from "../../models/Answer";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { autoGradeMCQs, calculateFinalScore } from "../../services/scoring.service";
 import { calculatePassFail } from "../../services/result.service";
-import { isUuid } from "../../utils/validation";
 import { isActiveAttemptStatus } from "../../utils/attempt-status";
+import mongoose from "mongoose";
+import crypto from "crypto";
 
 const QUESTIONS_PER_SECTION = 15;
 
 async function fetchActiveAssessmentById(assessmentId: string) {
-  try {
-    return await pool.query(
-      `SELECT id, duration_minutes, code
-       FROM assessments
-       WHERE id = $1 AND is_active = true`,
-      [assessmentId]
-    );
-  } catch (error: any) {
-    if (error?.code === "42703") {
-      return pool.query(
-        `SELECT id, duration_minutes, code
-         FROM assessments
-         WHERE id = $1 AND UPPER(status) = 'ACTIVE'`,
-        [assessmentId]
-      );
-    }
-    throw error;
-  }
+  return Assessment.findOne({
+    _id: assessmentId,
+    is_active: true,
+  }).select("id duration_minutes code");
 }
 
 async function fetchActiveAssessmentByCode(assessmentCode: string) {
-  try {
-    return await pool.query(
-      `SELECT id, duration_minutes, code
-       FROM assessments
-       WHERE code = $1 AND is_active = true`,
-      [assessmentCode]
-    );
-  } catch (error: any) {
-    if (error?.code === "42703") {
-      return pool.query(
-        `SELECT id, duration_minutes, code
-         FROM assessments
-         WHERE code = $1 AND UPPER(status) = 'ACTIVE'`,
-        [assessmentCode]
-      );
-    }
-    throw error;
-  }
+  return Assessment.findOne({
+    code: assessmentCode.toUpperCase(),
+    is_active: true,
+  }).select("id duration_minutes code");
 }
 
-let attemptsStartedColumnCache: "started_at" | "start_time" | null = null;
-let attemptsSubmittedColumnCache: "submitted_at" | "end_time" | null = null;
-let answersTextColumnCache: "answer_text" | "answer" | null = null;
-
-async function getAttemptsStartedColumn() {
-  if (attemptsStartedColumnCache) {
-    return attemptsStartedColumnCache;
-  }
-
-  const startedAt = await pool.query(
-    `SELECT 1
-     FROM information_schema.columns
-     WHERE table_schema = current_schema()
-       AND table_name = 'attempts'
-       AND column_name = 'started_at'
-     LIMIT 1`
-  );
-
-  attemptsStartedColumnCache = (startedAt.rowCount ?? 0) > 0 ? "started_at" : "start_time";
-  return attemptsStartedColumnCache;
-}
-
-async function getAttemptsSubmittedColumn() {
-  if (attemptsSubmittedColumnCache) {
-    return attemptsSubmittedColumnCache;
-  }
-
-  const submittedAt = await pool.query(
-    `SELECT 1
-     FROM information_schema.columns
-     WHERE table_schema = current_schema()
-       AND table_name = 'attempts'
-       AND column_name = 'submitted_at'
-     LIMIT 1`
-  );
-
-  attemptsSubmittedColumnCache = (submittedAt.rowCount ?? 0) > 0 ? "submitted_at" : "end_time";
-  return attemptsSubmittedColumnCache;
-}
-
-async function getAnswersTextColumn() {
-  if (answersTextColumnCache) {
-    return answersTextColumnCache;
-  }
-
-  const result = await pool.query(
-    `SELECT EXISTS (
-       SELECT 1
-       FROM pg_attribute
-       WHERE attrelid = to_regclass('answers')
-         AND attname = 'answer_text'
-         AND NOT attisdropped
-     ) AS has_answer_text`
-  );
-
-  answersTextColumnCache = result.rows[0]?.has_answer_text ? "answer_text" : "answer";
-  return answersTextColumnCache;
-}
-
-async function createAttemptRecord(userId: string, assessmentId: string) {
-  const startedColumn = await getAttemptsStartedColumn();
-
-  try {
-    return await pool.query(
-      `INSERT INTO attempts (user_id, assessment_id, status, ${startedColumn})
-       VALUES ($1, $2, 'started', NOW())
-       RETURNING id`,
-      [userId, assessmentId]
-    );
-  } catch (error: any) {
-    if (error?.code === "23514") {
-      return pool.query(
-        `INSERT INTO attempts (user_id, assessment_id, status, ${startedColumn})
-         VALUES ($1, $2, 'IN_PROGRESS', NOW())
-         RETURNING id`,
-        [userId, assessmentId]
-      );
-    }
-    throw error;
-  }
-}
-
-async function markAttemptCompleted(attemptId: string) {
-  const submittedColumn = await getAttemptsSubmittedColumn();
-  const statusCandidates = [
-    "completed",
-    "COMPLETED",
-    "submitted",
-    "SUBMITTED",
-    "terminated",
-    "TERMINATED",
-  ];
-
-  let lastConstraintError: any = null;
-  for (const status of statusCandidates) {
-    try {
-      return await pool.query(
-        `UPDATE attempts
-         SET status = $2,
-             ${submittedColumn} = NOW()
-         WHERE id = $1`,
-        [attemptId, status]
-      );
-    } catch (error: any) {
-      if (error?.code === "23514") {
-        lastConstraintError = error;
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  throw lastConstraintError ?? new Error("Unable to set a compatible completed status");
+function hashForShuffle(id: string, attemptId: string): number {
+  const combined = id + attemptId;
+  const hash = crypto.createHash("md5").update(combined).digest("hex");
+  return parseInt(hash.substring(0, 8), 16);
 }
 
 async function fetchQuestionsForAttempt(assessmentId: string, attemptId: string) {
-  return pool.query(
-    `WITH section_questions AS (
-       SELECT
-         q.id,
-         q.question_text,
-         q.question_type,
-         q.marks,
-         q.section,
-         CASE
-           WHEN LOWER(q.question_type) = 'mcq' THEN (
-             CASE
-               WHEN jsonb_typeof(q.options::jsonb) = 'object' THEN (
-                 SELECT json_agg(json_build_object('id', key, 'text', value))
-                 FROM jsonb_each_text(q.options::jsonb) AS t(key, value)
-               )
-               WHEN jsonb_typeof(q.options::jsonb) = 'array' THEN (
-                 SELECT json_agg(
-                   json_build_object('id', chr(96 + ordinality::int), 'text', value)
-                   ORDER BY ordinality
-                 )
-                 FROM jsonb_array_elements_text(q.options::jsonb) WITH ORDINALITY AS t(value, ordinality)
-               )
-               ELSE NULL
-             END
-           )
-           ELSE NULL
-         END AS options,
-         ROW_NUMBER() OVER (PARTITION BY q.section ORDER BY md5(q.id::text || $2::text)) AS rn
-       FROM questions q
-       WHERE q.assessment_id = $1
-     )
-     SELECT id, question_text, question_type, marks, section, options
-     FROM section_questions
-     WHERE rn <= $3
-     ORDER BY
-       CASE
-         WHEN section = 'Quantitative' THEN 1
-         WHEN section = 'Verbal' THEN 2
-         WHEN section = 'Coding' THEN 3
-         ELSE 4
-       END,
-       rn`,
-    [assessmentId, attemptId, QUESTIONS_PER_SECTION]
+  const questions = await Question.find({
+    assessment_id: assessmentId,
+  }).lean();
+
+  const sections = ["Quantitative", "Verbal", "Coding", "Logical"];
+  const questionsBySection: Record<string, any[]> = {
+    Quantitative: [],
+    Verbal: [],
+    Coding: [],
+    Logical: [],
+  };
+
+  for (const question of questions) {
+    const section = question.section || "Logical";
+    if (questionsBySection[section]) {
+      questionsBySection[section].push(question);
+    }
+  }
+
+  const result = [];
+  for (const section of sections) {
+    let sectionQuestions = questionsBySection[section] || [];
+
+    sectionQuestions.sort((a, b) => {
+      const hashA = hashForShuffle(a._id.toString(), attemptId);
+      const hashB = hashForShuffle(b._id.toString(), attemptId);
+      return hashA - hashB;
+    });
+
+    sectionQuestions = sectionQuestions.slice(0, QUESTIONS_PER_SECTION);
+
+    for (const q of sectionQuestions) {
+      const formattedQuestion: any = {
+        id: q._id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        marks: q.marks,
+        section: q.section,
+      };
+
+      if (q.question_type === "mcq" && q.options) {
+        if (Array.isArray(q.options)) {
+          formattedQuestion.options = q.options.map((text: string, idx: number) => ({
+            id: String.fromCharCode(97 + idx),
+            text,
+          }));
+        } else if (typeof q.options === "object") {
+          formattedQuestion.options = Object.entries(q.options).map(
+            ([key, value]) => ({
+              id: key,
+              text: value,
+            })
+          );
+        }
+      }
+
+      result.push(formattedQuestion);
+    }
+  }
+
+  return result;
+}
+
+async function createAttemptRecord(userId: string, assessmentId: string) {
+  const attempt = new Attempt({
+    user_id: userId,
+    assessment_id: assessmentId,
+    status: "started",
+    started_at: new Date(),
+  });
+  await attempt.save();
+  return attempt;
+}
+
+async function markAttemptCompleted(attemptId: string) {
+  return Attempt.findByIdAndUpdate(
+    attemptId,
+    {
+      status: "completed",
+      submitted_at: new Date(),
+    },
+    { new: true }
   );
 }
 
@@ -228,38 +134,36 @@ export async function startAttempt(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: "Assessment code or ID is required" });
     }
 
-    let assessmentQuery;
+    let assessment;
     if (assessmentId) {
-      assessmentQuery = await fetchActiveAssessmentById(assessmentId);
+      if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+        return res.status(400).json({ message: "Invalid assessment ID" });
+      }
+      assessment = await fetchActiveAssessmentById(assessmentId);
     } else {
-      assessmentQuery = await fetchActiveAssessmentByCode(String(assessmentCode).toUpperCase());
+      assessment = await fetchActiveAssessmentByCode(
+        String(assessmentCode).toUpperCase()
+      );
     }
 
-    if (!assessmentQuery.rowCount) {
+    if (!assessment) {
       return res.status(404).json({ message: "Assessment not found or inactive" });
     }
 
-    const assessment = assessmentQuery.rows[0];
     if (assessmentCode && assessment.code !== String(assessmentCode).toUpperCase()) {
       return res.status(403).json({ message: "Code mismatch for this assessment" });
     }
 
-    const startedColumn = await getAttemptsStartedColumn();
-    const existingAttempt = await pool.query(
-      `SELECT id, status
-       FROM attempts
-       WHERE user_id = $1 AND assessment_id = $2
-       ORDER BY ${startedColumn} DESC
-       LIMIT 1`,
-      [userId, assessment.id]
-    );
+    const existingAttempt = await Attempt.findOne({
+      user_id: userId,
+      assessment_id: assessment._id,
+    }).sort({ started_at: -1 });
 
-    if ((existingAttempt.rowCount ?? 0) > 0) {
-      const attempt = existingAttempt.rows[0];
-      if (isActiveAttemptStatus(attempt.status)) {
+    if (existingAttempt) {
+      if (isActiveAttemptStatus(existingAttempt.status)) {
         return res.status(409).json({
           message: "An active attempt already exists",
-          attemptId: attempt.id,
+          attemptId: existingAttempt._id,
         });
       }
 
@@ -268,19 +172,23 @@ export async function startAttempt(req: AuthRequest, res: Response) {
       });
     }
 
-    const createdAttempt = await createAttemptRecord(userId, assessment.id);
-    const attemptId = createdAttempt.rows[0].id as string;
+    const attempt = await createAttemptRecord(userId, assessment._id.toString());
+    const questions = await fetchQuestionsForAttempt(
+      assessment._id.toString(),
+      attempt._id.toString()
+    );
 
-    const questionsResult = await fetchQuestionsForAttempt(assessment.id, attemptId);
-    if (!questionsResult.rowCount) {
-      return res.status(500).json({ message: "No questions configured for this assessment" });
+    if (questions.length === 0) {
+      return res
+        .status(500)
+        .json({ message: "No questions configured for this assessment" });
     }
 
     return res.status(201).json({
       message: "Attempt started",
-      attemptId,
+      attemptId: attempt._id,
       durationMinutes: assessment.duration_minutes,
-      questions: questionsResult.rows,
+      questions,
     });
   } catch (error) {
     console.error("startAttempt error:", error);
@@ -301,22 +209,20 @@ export async function submitAttempt(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: "attemptId is required" });
     }
 
-    if (!isUuid(attemptId)) {
+    if (!mongoose.Types.ObjectId.isValid(attemptId)) {
       return res.status(400).json({ message: "Invalid attemptId" });
     }
 
-    const attemptResult = await pool.query(
-      `SELECT id, status
-       FROM attempts
-       WHERE id = $1 AND user_id = $2`,
-      [attemptId, userId]
-    );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user_id: userId,
+    });
 
-    if (attemptResult.rowCount === 0) {
+    if (!attempt) {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
-    if (!isActiveAttemptStatus(attemptResult.rows[0].status)) {
+    if (!isActiveAttemptStatus(attempt.status)) {
       return res.status(409).json({ message: "Attempt already submitted" });
     }
 
@@ -358,24 +264,25 @@ export async function getQuestions(req: AuthRequest, res: Response) {
       return res.status(400).json({ message: "Invalid attemptId" });
     }
 
-    if (!isUuid(attemptId)) {
+    if (!mongoose.Types.ObjectId.isValid(attemptId)) {
       return res.status(400).json({ message: "Invalid attemptId" });
     }
 
-    const attemptResult = await pool.query(
-      `SELECT id, assessment_id, status
-       FROM attempts
-       WHERE id = $1 AND user_id = $2`,
-      [attemptId, userId]
-    );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user_id: userId,
+    }).select("assessment_id status");
 
-    if (attemptResult.rowCount === 0) {
+    if (!attempt) {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
-    const assessmentId = attemptResult.rows[0].assessment_id as string;
-    const questionsResult = await fetchQuestionsForAttempt(assessmentId, attemptId);
-    return res.json(questionsResult.rows);
+    const questions = await fetchQuestionsForAttempt(
+      attempt.assessment_id.toString(),
+      attemptId
+    );
+
+    return res.json(questions);
   } catch (error) {
     console.error("getQuestions error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -391,69 +298,73 @@ export async function saveAnswer(req: AuthRequest, res: Response) {
     const attemptId = req.params.attemptId;
     const { questionId: rawQuestionId, answer } = req.body;
     const userId = req.user.userId;
-    const questionId = typeof rawQuestionId === "string" ? rawQuestionId.trim() : rawQuestionId;
+    const questionId =
+      typeof rawQuestionId === "string" ? rawQuestionId.trim() : rawQuestionId;
 
     if (!attemptId || !questionId || answer === undefined) {
-      return res.status(400).json({ message: "Invalid attemptId, questionId or answer" });
+      return res
+        .status(400)
+        .json({ message: "Invalid attemptId, questionId or answer" });
     }
 
-    if (!isUuid(attemptId) || !isUuid(questionId)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(attemptId) ||
+      !mongoose.Types.ObjectId.isValid(questionId)
+    ) {
       return res.status(400).json({ message: "Invalid attemptId or questionId" });
     }
 
-    const attemptResult = await pool.query(
-      `SELECT id, assessment_id, status
-       FROM attempts
-       WHERE id = $1 AND user_id = $2`,
-      [attemptId, userId]
-    );
+    const attempt = await Attempt.findOne({
+      _id: attemptId,
+      user_id: userId,
+    }).select("assessment_id status");
 
-    if (attemptResult.rowCount === 0) {
-      return res.status(404).json({ message: "Active attempt not found or already submitted" });
+    if (!attempt) {
+      return res
+        .status(404)
+        .json({ message: "Active attempt not found or already submitted" });
     }
 
-    if (!isActiveAttemptStatus(attemptResult.rows[0].status)) {
-      return res.status(404).json({ message: "Active attempt not found or already submitted" });
+    if (!isActiveAttemptStatus(attempt.status)) {
+      return res
+        .status(404)
+        .json({ message: "Active attempt not found or already submitted" });
     }
 
-    const assessmentId = attemptResult.rows[0].assessment_id as string;
-    const questionResult = await pool.query(
-      `SELECT id
-       FROM questions
-       WHERE id = $1 AND assessment_id = $2`,
-      [questionId, assessmentId]
-    );
+    const question = await Question.findOne({
+      _id: questionId,
+      assessment_id: attempt.assessment_id,
+    }).select("_id");
 
-    if (questionResult.rowCount === 0) {
-      return res.status(400).json({ message: "Question does not belong to this assessment" });
+    if (!question) {
+      return res
+        .status(400)
+        .json({ message: "Question does not belong to this assessment" });
     }
 
-    const answerColumn = await getAnswersTextColumn();
-    const updated = await pool.query(
-      `UPDATE answers
-       SET ${answerColumn} = $3
-       WHERE attempt_id = $1 AND question_id = $2
-       RETURNING id`,
-      [attemptId, questionId, answer]
-    );
+    let answerRecord = await Answer.findOne({
+      attempt_id: attemptId,
+      question_id: questionId,
+    });
 
-    if ((updated.rowCount ?? 0) > 0) {
+    if (answerRecord) {
+      answerRecord.answer_text = answer;
+      await answerRecord.save();
       return res.json({
         message: "Answer saved successfully",
-        answerId: updated.rows[0].id,
+        answerId: answerRecord._id,
       });
     }
 
-    const inserted = await pool.query(
-      `INSERT INTO answers (attempt_id, question_id, ${answerColumn})
-       VALUES ($1, $2, $3)
-       RETURNING id`,
-      [attemptId, questionId, answer]
-    );
+    const newAnswer = await Answer.create({
+      attempt_id: attemptId,
+      question_id: questionId,
+      answer_text: answer,
+    });
 
     return res.json({
       message: "Answer saved successfully",
-      answerId: inserted.rows[0].id,
+      answerId: newAnswer._id,
     });
   } catch (error) {
     console.error("saveAnswer error:", error);

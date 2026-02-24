@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = __importDefault(require("./config/db"));
 async function testDB() {
     try {
-        const result = await db_1.default.query("SELECT NOW()");
-        console.log("🟢 DB Time:", result.rows[0]);
+        await (0, db_1.default)();
+        console.log("🟢 MongoDB Connection Successful");
         process.exit(0);
     }
     catch (error) {

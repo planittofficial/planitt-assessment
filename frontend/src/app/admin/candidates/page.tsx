@@ -166,21 +166,15 @@ export default function CandidatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center p-20">
         <p className="text-gray-900 text-lg animate-pulse">Loading candidates...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-4xl mx-auto">
-        <Link
-          href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
-        >
-          ← Back to Dashboard
-        </Link>
         <h1 className="text-3xl font-bold mb-8 text-gray-900">Manage Candidates</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">

@@ -4,13 +4,10 @@ import cors from "cors";
 import config from "./config";
 import authRoutes from "./api/routes/auth";
 import attemptRoutes from "./api/routes/attempt";
-import pool from "./config/db";
+import connectDB from "./config/db";
 import violationRoutes from "./api/routes/violation";
 import adminRoutes from "./api/routes/admin";
 import resultRoutes from "./api/routes/result";
-
-
-
 
 const app = express();
 
@@ -24,16 +21,12 @@ app.use(
   })
 );
 
-
-
 // ---------- Routes ----------
 app.use("/api/auth", authRoutes);
 app.use("/api/attempts", attemptRoutes);
 app.use("/api/violations", violationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/results", resultRoutes);
-
-
 
 // ---------- Error Handler ----------
 app.use(
@@ -46,7 +39,7 @@ app.use(
 // ---------- Start Server AFTER DB Ready ----------
 async function startServer() {
   try {
-    await pool.query("SELECT 1");
+    await connectDB();
     console.log("🚀 Database connected");
 
     app.listen(config.PORT, () => {
@@ -56,7 +49,7 @@ async function startServer() {
     });
   } catch (error) {
     console.error("❌ Database connection failed:", error);
-    process.exit(1); // VERY IMPORTANT
+    process.exit(1);
   }
 }
 

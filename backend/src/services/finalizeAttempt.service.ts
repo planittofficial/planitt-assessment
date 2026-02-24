@@ -1,43 +1,27 @@
-import pool from "../config/db";
+import Answer from "../models/Answer";
+import Attempt from "../models/Attempt";
 import { calculatePassFail } from "./result.service";
 
 /**
  * Finalizes an attempt if all answers are graded
  */
 export async function finalizeAttemptIfComplete(attemptId: string) {
-  // 1️⃣ Check for ungraded answers
-  const pending = await pool.query(
-    `
-    SELECT COUNT(*) AS remaining
-    FROM answers
-    WHERE attempt_id = $1
-      AND is_graded = false
-    `,
-    [attemptId]
-  );
+  const pending = await Answer.countDocuments({
+    attempt_id: attemptId,
+    is_graded: false,
+  });
 
-  const remaining = Number(pending.rows[0].remaining);
-
-  if (remaining > 0) {
-    // Still waiting for grading
+  if (pending > 0) {
     return { finalized: false };
   }
 
-  // 2️⃣ Recalculate final score (safety)
-  await pool.query(
-    `
-    UPDATE attempts
-    SET final_score = (
-      SELECT COALESCE(SUM(marks_obtained), 0)
-      FROM answers
-      WHERE attempt_id = $1
-    )
-    WHERE id = $1
-    `,
-    [attemptId]
-  );
+  const answers = await Answer.find({ attempt_id: attemptId });
+  const totalScore = answers.reduce((sum, a) => sum + (a.marks_obtained || 0), 0);
 
-  // 3️⃣ Calculate PASS / FAIL
+  await Attempt.findByIdAndUpdate(attemptId, {
+    final_score: totalScore,
+  });
+
   const result = await calculatePassFail(attemptId);
 
   return {

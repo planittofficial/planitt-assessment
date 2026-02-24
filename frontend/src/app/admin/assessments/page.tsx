@@ -44,14 +44,8 @@ export default function AdminAssessmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-8">
+    <>
       <div className="max-w-6xl mx-auto">
-        <Link
-          href="/admin"
-          className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md shadow-gray-300/40 transition-all hover:-translate-y-0.5 hover:bg-gray-100 active:translate-y-0"
-        >
-          ← Back to Dashboard
-        </Link>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Assessments</h1>
         <Link

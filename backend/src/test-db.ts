@@ -1,9 +1,9 @@
-import pool from "./config/db";
+import connectDB from "./config/db";
 
 async function testDB() {
   try {
-    const result = await pool.query("SELECT NOW()");
-    console.log("🟢 DB Time:", result.rows[0]);
+    await connectDB();
+    console.log("🟢 MongoDB Connection Successful");
     process.exit(0);
   } catch (error) {
     console.error("🔴 DB Connection Failed:", error);

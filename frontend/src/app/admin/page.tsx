@@ -91,6 +91,12 @@ export default function AdminPage() {
             >
               Candidates
             </Link>
+            <Link
+              href="/admin/admins"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-purple-500/10"
+            >
+              Admins
+            </Link>
             <CandidateProfileMenu inline />
           </div>
         </div>

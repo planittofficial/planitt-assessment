@@ -1,26 +1,16 @@
-import pool from "../config/db";
+import Violation from "../models/Violation";
 
 export async function checkAutoSubmit(attemptId: string) {
-  const result = await pool.query(
-    `SELECT violation_type, COUNT(*) as count
-     FROM violations
-     WHERE attempt_id = $1
-     GROUP BY violation_type`,
-    [attemptId]
-  );
+  const violations = await Violation.find({ attempt_id: attemptId });
 
-  const totalViolations = result.rows.reduce(
-    (total, row) => total + Number(row.count),
-    0
-  );
+  const totalViolations = violations.length;
 
-  for (const row of result.rows) {
-    if (row.violation_type === "AUTO_TYPER_DETECTED") {
+  for (const violation of violations) {
+    if (violation.violation_type === "AUTO_TYPER_DETECTED") {
       return { autoSubmit: true, reason: "AUTO_TYPER_DETECTED", totalViolations };
     }
   }
 
-  // Auto-submit once total violations reach 3.
   if (totalViolations >= 3) {
     return { autoSubmit: true, reason: "TOTAL_VIOLATION_LIMIT", totalViolations };
   }

@@ -361,6 +361,30 @@ export async function publishResult(req: Request, res: Response) {
   }
 }
 
+export async function deleteAttempt(req: Request, res: Response) {
+  try {
+    const { attemptId } = req.params;
+    if (!requireObjectIdParam(res, "attemptId", attemptId)) {
+      return;
+    }
+
+    const deleteResult = await Attempt.deleteOne({ _id: attemptId });
+    if (deleteResult.deletedCount === 0) {
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+
+    await Promise.all([
+      Answer.deleteMany({ attempt_id: attemptId }),
+      Violation.deleteMany({ attempt_id: attemptId }),
+    ]);
+
+    res.json({ message: "Attempt deleted successfully" });
+  } catch (error) {
+    console.error("❌ deleteAttempt error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export async function publishAllResults(req: Request, res: Response) {
   try {
     const assessmentId = req.params.assessmentId;
@@ -1016,4 +1040,3 @@ export async function deleteAdmin(req: Request, res: Response) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
-

@@ -27,8 +27,15 @@ export async function apiFetch(
   });
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new ApiError(data.message || "Request failed", res.status, data);
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
+    const data = isJson ? await res.json().catch(() => ({})) : {};
+    const text = isJson ? "" : await res.text().catch(() => "");
+    const message =
+      (data as any).message ||
+      text ||
+      `Request failed (${res.status})`;
+    throw new ApiError(message, res.status, data);
   }
 
   return res.json();

@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { Question } from "@/types";
 
 export const getAssessments = () => {
@@ -47,6 +47,50 @@ export const publishResult = (attemptId: string | number) => {
   return apiFetch(`/api/admin/attempts/${attemptId}/publish`, {
     method: "POST",
   });
+};
+
+export const deleteAttempt = async (
+  attemptId: string | number,
+  assessmentId?: string | number
+) => {
+  const requests: Array<() => Promise<any>> = [
+    () =>
+      apiFetch(`/api/admin/attempts/${attemptId}`, {
+        method: "DELETE",
+      }),
+    () =>
+      apiFetch(`/api/admin/attempts/${attemptId}/delete`, {
+        method: "POST",
+      }),
+  ];
+
+  if (assessmentId !== undefined) {
+    requests.push(
+      () =>
+        apiFetch(`/api/admin/assessments/${assessmentId}/attempts/${attemptId}`, {
+          method: "DELETE",
+        }),
+      () =>
+        apiFetch(`/api/admin/assessments/${assessmentId}/attempts/${attemptId}/delete`, {
+          method: "POST",
+        })
+    );
+  }
+
+  let lastError: unknown = null;
+  for (const request of requests) {
+    try {
+      return await request();
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 404) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError ?? new Error("Failed to delete attempt");
 };
 
 export const publishAllResults = (assessmentId: string | number) => {

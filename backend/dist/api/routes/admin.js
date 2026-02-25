@@ -19,6 +19,10 @@ router.get("/attempts/:attemptId/violations", admin_controller_1.getViolationsBy
 router.get("/attempts/:attemptId/descriptive", admin_controller_1.getDescriptiveAnswers);
 router.post("/answers/grade", admin_controller_1.gradeDescriptiveAnswer);
 router.post("/attempts/:attemptId/publish", admin_controller_1.publishResult);
+router.delete("/attempts/:attemptId", admin_controller_1.deleteAttempt);
+router.post("/attempts/:attemptId/delete", admin_controller_1.deleteAttempt);
+router.delete("/assessments/:assessmentId/attempts/:attemptId", admin_controller_1.deleteAttempt);
+router.post("/assessments/:assessmentId/attempts/:attemptId/delete", admin_controller_1.deleteAttempt);
 router.post("/assessments/:assessmentId/publish-all", admin_controller_1.publishAllResults);
 router.post("/assessments", admin_controller_1.createAssessment);
 router.patch("/assessments/:assessmentId", admin_controller_1.updateAssessment);
@@ -34,4 +38,5 @@ router.post("/candidates/bulk-delete", admin_controller_1.bulkDeleteCandidates);
 router.get("/dashboard-stats", admin_controller_1.getDashboardStats);
 router.get("/admins", admin_controller_1.getAdmins);
 router.post("/admins", admin_controller_1.addAdmin);
+router.delete("/admins/:id", admin_controller_1.deleteAdmin);
 exports.default = router;

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getAttemptsByAssessment, publishAllResults } from "@/services/admin.service";
+import { deleteAttempt, getAttemptsByAssessment, publishAllResults } from "@/services/admin.service";
 import { useAdmin } from "@/hooks/useAdmin";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
@@ -21,6 +21,7 @@ export default function AdminAssessmentAttemptsPage() {
   const [attempts, setAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishingAll, setPublishingAll] = useState(false);
+  const [deletingAttemptId, setDeletingAttemptId] = useState<string | number | null>(null);
   const [filter, setFilter] = useState<"ALL" | "PASS" | "FAIL">("ALL");
 
   const loadAttempts = async () => {
@@ -101,6 +102,28 @@ export default function AdminAssessmentAttemptsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleDeleteAttempt = async (attemptId: string | number) => {
+    const confirmed = await openConfirmDialog({
+      title: "Delete Attempt",
+      message: "Are you sure you want to delete this attempt? This action cannot be undone.",
+      confirmText: "Delete",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    setDeletingAttemptId(attemptId);
+    try {
+      await deleteAttempt(attemptId, assessmentId);
+      await loadAttempts();
+      notifySuccess("Attempt deleted successfully");
+    } catch (err) {
+      console.error("Failed to delete attempt", err);
+      notifyError("Failed to delete attempt");
+    } finally {
+      setDeletingAttemptId(null);
+    }
   };
 
   if (loading) {
@@ -220,6 +243,14 @@ export default function AdminAssessmentAttemptsPage() {
                   >
                     View Results
                   </Link>
+                  <button
+                    onClick={() => handleDeleteAttempt(a.id)}
+                    disabled={deletingAttemptId === a.id}
+                    className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg text-sm font-bold border border-red-500/30 transition-all disabled:opacity-50"
+                    title="Delete Attempt"
+                  >
+                    {deletingAttemptId === a.id ? "Deleting..." : "Delete"}
+                  </button>
                   {a.is_published && (
                     <span className="bg-green-500/10 text-green-400 px-4 py-2 rounded-lg text-sm font-bold border border-green-500/20">
                       Published
@@ -231,6 +262,7 @@ export default function AdminAssessmentAttemptsPage() {
           ))
         )}
       </div>
+    </div>
     </>
   );
 }

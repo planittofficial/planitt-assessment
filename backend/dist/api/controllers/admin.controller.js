@@ -12,6 +12,7 @@ exports.getAttemptDetails = getAttemptDetails;
 exports.getDescriptiveAnswers = getDescriptiveAnswers;
 exports.gradeDescriptiveAnswer = gradeDescriptiveAnswer;
 exports.publishResult = publishResult;
+exports.deleteAttempt = deleteAttempt;
 exports.publishAllResults = publishAllResults;
 exports.createAssessment = createAssessment;
 exports.updateAssessment = updateAssessment;
@@ -28,6 +29,7 @@ exports.deleteCandidate = deleteCandidate;
 exports.bulkDeleteCandidates = bulkDeleteCandidates;
 exports.getAdmins = getAdmins;
 exports.addAdmin = addAdmin;
+exports.deleteAdmin = deleteAdmin;
 const User_1 = __importDefault(require("../../models/User"));
 const Assessment_1 = __importDefault(require("../../models/Assessment"));
 const Question_1 = __importDefault(require("../../models/Question"));
@@ -339,6 +341,27 @@ async function publishResult(req, res) {
     }
     catch (error) {
         console.error("❌ publishResult error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+async function deleteAttempt(req, res) {
+    try {
+        const { attemptId } = req.params;
+        if (!requireObjectIdParam(res, "attemptId", attemptId)) {
+            return;
+        }
+        const deleteResult = await Attempt_1.default.deleteOne({ _id: attemptId });
+        if (deleteResult.deletedCount === 0) {
+            return res.status(404).json({ message: "Attempt not found" });
+        }
+        await Promise.all([
+            Answer_1.default.deleteMany({ attempt_id: attemptId }),
+            Violation_1.default.deleteMany({ attempt_id: attemptId }),
+        ]);
+        res.json({ message: "Attempt deleted successfully" });
+    }
+    catch (error) {
+        console.error("❌ deleteAttempt error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }
@@ -904,6 +927,20 @@ async function addAdmin(req, res) {
             return res.status(409).json({ message: "User already exists" });
         }
         console.error("❌ addAdmin error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+/**
+ * DELETE /api/admin/admins/:id
+ */
+async function deleteAdmin(req, res) {
+    try {
+        const { id } = req.params;
+        await User_1.default.findByIdAndDelete(id);
+        res.json({ message: "Admin deleted successfully" });
+    }
+    catch (error) {
+        console.error("❌ deleteAdmin error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }

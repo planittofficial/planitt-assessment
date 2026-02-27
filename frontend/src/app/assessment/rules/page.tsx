@@ -12,14 +12,14 @@ export default function AssessmentRulesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
-      <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200 bg-white p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-700 bg-zinc-900 p-8 shadow-2xl">
         <h1 className="mb-3 text-3xl font-bold">Assessment Rules</h1>
-        <p className="mb-6 text-gray-500">
+        <p className="mb-6 text-zinc-400">
           Read these instructions before starting your assessment.
         </p>
 
-        <ol className="mb-8 list-decimal space-y-3 pl-6 text-gray-700">
+        <ol className="mb-8 list-decimal space-y-3 pl-6 text-zinc-200">
           {rules.map((rule) => (
             <li key={rule}>{rule}</li>
           ))}
@@ -28,13 +28,13 @@ export default function AssessmentRulesPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/assessment/start"
-            className="rounded-lg bg-yellow-500 px-5 py-3 font-semibold text-black hover:bg-yellow-400"
+            className="rounded-lg bg-amber-400 px-5 py-3 font-semibold text-black hover:bg-amber-300"
           >
             Proceed to Start
           </Link>
           <Link
             href="/results"
-            className="rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-100"
+            className="rounded-lg border border-zinc-600 bg-zinc-800 px-5 py-3 font-semibold text-zinc-100 hover:bg-zinc-700"
           >
             View Results
           </Link>

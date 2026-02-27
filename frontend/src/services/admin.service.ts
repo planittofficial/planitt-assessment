@@ -99,6 +99,76 @@ export const publishAllResults = (assessmentId: string | number) => {
   });
 };
 
+export const deleteAllAttemptsByAssessment = async (
+  assessmentId: string | number,
+  attemptIds: Array<string | number> = []
+) => {
+  const requests: Array<() => Promise<any>> = [
+    () =>
+      apiFetch(`/api/admin/assessments/${assessmentId}/attempts`, {
+        method: "DELETE",
+      }),
+    () =>
+      apiFetch(`/api/admin/assessments/${assessmentId}/attempts/delete`, {
+        method: "POST",
+      }),
+  ];
+
+  let lastError: unknown = null;
+  for (const request of requests) {
+    try {
+      return await request();
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 404) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  if (attemptIds.length > 0) {
+    for (const attemptId of attemptIds) {
+      await deleteAttempt(attemptId, assessmentId);
+    }
+    return {
+      message: "All attempts deleted successfully",
+      count: attemptIds.length,
+      fallback: "individual-delete",
+    };
+  }
+
+  throw lastError ?? new Error("Failed to delete all attempts");
+};
+
+export const deleteAssessment = async (assessmentId: string | number) => {
+  const requests: Array<() => Promise<any>> = [
+    () =>
+      apiFetch(`/api/admin/assessments/${assessmentId}`, {
+        method: "DELETE",
+      }),
+    () =>
+      apiFetch(`/api/admin/assessments/${assessmentId}/delete`, {
+        method: "POST",
+      }),
+  ];
+
+  let lastError: unknown = null;
+  for (const request of requests) {
+    try {
+      return await request();
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 404) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError ?? new Error("Failed to delete assessment");
+};
+
 export const createAssessment = (payload: {
   title: string;
   duration_minutes: number;

@@ -385,6 +385,72 @@ export async function deleteAttempt(req: Request, res: Response) {
   }
 }
 
+export async function deleteAllAttemptsByAssessment(req: Request, res: Response) {
+  try {
+    const { assessmentId } = req.params;
+    if (!requireObjectIdParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
+
+    const attempts = await Attempt.find({ assessment_id: assessmentId })
+      .select("_id")
+      .lean();
+    const attemptIds = attempts.map((a) => a._id);
+
+    if (attemptIds.length > 0) {
+      await Promise.all([
+        Answer.deleteMany({ attempt_id: { $in: attemptIds } }),
+        Violation.deleteMany({ attempt_id: { $in: attemptIds } }),
+      ]);
+    }
+
+    const deleteResult = await Attempt.deleteMany({ assessment_id: assessmentId });
+
+    res.json({
+      message: "All attempts deleted successfully",
+      count: deleteResult.deletedCount ?? 0,
+    });
+  } catch (error) {
+    console.error("❌ deleteAllAttemptsByAssessment error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function deleteAssessment(req: Request, res: Response) {
+  try {
+    const { assessmentId } = req.params;
+    if (!requireObjectIdParam(res, "assessmentId", assessmentId)) {
+      return;
+    }
+
+    const assessment = await Assessment.findById(assessmentId).select("_id").lean();
+    if (!assessment) {
+      return res.status(404).json({ message: "Assessment not found" });
+    }
+
+    const attempts = await Attempt.find({ assessment_id: assessmentId })
+      .select("_id")
+      .lean();
+    const attemptIds = attempts.map((a) => a._id);
+
+    if (attemptIds.length > 0) {
+      await Promise.all([
+        Answer.deleteMany({ attempt_id: { $in: attemptIds } }),
+        Violation.deleteMany({ attempt_id: { $in: attemptIds } }),
+      ]);
+      await Attempt.deleteMany({ assessment_id: assessmentId });
+    }
+
+    await Question.deleteMany({ assessment_id: assessmentId });
+    await Assessment.deleteOne({ _id: assessmentId });
+
+    res.json({ message: "Assessment deleted successfully" });
+  } catch (error) {
+    console.error("❌ deleteAssessment error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export async function publishAllResults(req: Request, res: Response) {
   try {
     const assessmentId = req.params.assessmentId;

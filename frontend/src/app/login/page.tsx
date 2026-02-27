@@ -39,7 +39,7 @@ export default function LoginPage() {
       >
         <div className="flex justify-center mb-4">
           <Image
-            src="/planitt-logo.png"
+            src="/planitt-app-black%202.png"
             alt="Planitt logo"
             width={180}
             height={60}

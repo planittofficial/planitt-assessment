@@ -65,6 +65,33 @@ export default function AttemptPage() {
   }, [id]);
 
   const filteredQuestions = questions.filter(q => q.section === selectedSection);
+  const sectionIndex = sections.indexOf(selectedSection);
+  const nextSection =
+    sectionIndex >= 0 && sectionIndex < sections.length - 1
+      ? sections[sectionIndex + 1]
+      : null;
+  const isLastQuestionInSection =
+    filteredQuestions.length > 0 && currentIndex === filteredQuestions.length - 1;
+  const isSectionBoundary = filteredQuestions.length === 0 || isLastQuestionInSection;
+
+  useEffect(() => {
+    const hasQuestionsInSelectedSection = questions.some((q) => q.section === selectedSection);
+    if (questions.length > 0 && !hasQuestionsInSelectedSection) {
+      const firstSectionWithQuestions = sections.find((section) =>
+        questions.some((q) => q.section === section)
+      );
+      if (firstSectionWithQuestions) {
+        setSelectedSection(firstSectionWithQuestions);
+        setCurrentIndex(0);
+      }
+    }
+  }, [questions, selectedSection]);
+
+  useEffect(() => {
+    if (currentIndex >= filteredQuestions.length && filteredQuestions.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [filteredQuestions.length, currentIndex]);
 
   async function saveAnswer(qId: string, value: string) {
     if (submittedScore !== null) return;
@@ -91,32 +118,38 @@ export default function AttemptPage() {
     }
   };
 
+  const handleNextSection = () => {
+    if (!nextSection) return;
+    setSelectedSection(nextSection);
+    setCurrentIndex(0);
+  };
+
   if (submittedScore !== null) {
     // ... success UI
     // ... (Keep existing success UI)
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white p-8 rounded-xl border border-gray-200 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-zinc-900 p-8 rounded-xl border border-zinc-700 text-center shadow-2xl">
+          <div className="w-20 h-20 bg-amber-400/15 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h1 className="text-3xl font-bold mb-2">Assessment Submitted!</h1>
-          <p className="text-gray-500 mb-8">Your responses have been recorded successfully.</p>
+          <p className="text-zinc-400 mb-8">Your responses have been recorded successfully.</p>
           
-          <div className="bg-gray-100/50 rounded-lg p-6 mb-8 border border-gray-300">
-            <p className="text-sm text-gray-500 uppercase font-bold tracking-widest mb-1">Your Score</p>
-            <p className="text-5xl font-black text-yellow-500">{submittedScore}</p>
+          <div className="bg-zinc-800/60 rounded-lg p-6 mb-8 border border-zinc-600">
+            <p className="text-sm text-zinc-400 uppercase font-bold tracking-widest mb-1">Your Score</p>
+            <p className="text-5xl font-black text-amber-400">{submittedScore}</p>
           </div>
 
-          <p className="text-sm text-gray-500 mb-8 italic">
+          <p className="text-sm text-zinc-400 mb-8 italic">
             Note: Your final result (Pass/Fail) will be available once published by the administrator.
           </p>
 
           <button
             onClick={() => router.push("/results")}
-            className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+            className="w-full bg-amber-400 text-black py-4 rounded-xl font-bold hover:bg-amber-300 transition-colors"
           >
             Go to My Results
           </button>
@@ -127,7 +160,7 @@ export default function AttemptPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
         <p className="animate-pulse">Loading questions...</p>
       </div>
     );
@@ -138,21 +171,21 @@ export default function AttemptPage() {
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-6">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       {requireFullscreen && (
         <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white border border-gray-300 rounded-2xl p-6 text-center shadow-2xl">
+          <div className="w-full max-w-md bg-zinc-900 border border-zinc-600 rounded-2xl p-6 text-center shadow-2xl">
             <h2 className="text-xl font-bold mb-2">Fullscreen Required</h2>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-zinc-300 mb-6">
               You exited fullscreen mode. To continue the assessment, re-enter fullscreen.
             </p>
             <button
               onClick={requestAssessmentFullscreen}
-              className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all"
+              className="w-full bg-amber-400 text-black py-3 rounded-xl font-bold hover:bg-amber-300 transition-all"
             >
               Go Fullscreen
             </button>
-            <p className="text-xs text-gray-500 mt-3">
+            <p className="text-xs text-zinc-400 mt-3">
               This popup will close only after fullscreen is enabled.
             </p>
           </div>
@@ -171,8 +204,8 @@ export default function AttemptPage() {
                 }}
                 className={`px-6 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
                   selectedSection === section
-                    ? "bg-yellow-500 text-black border-yellow-500"
-                    : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                    ? "bg-amber-400 text-black border-amber-400"
+                    : "bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500"
                 }`}
               >
                 {section}
@@ -180,37 +213,37 @@ export default function AttemptPage() {
             ))}
           </div>
 
-          <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl border border-gray-200">
+          <div className="flex justify-between items-center mb-8 bg-zinc-900 p-4 rounded-xl border border-zinc-700">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] font-bold uppercase tracking-wider rounded border border-yellow-500/30">
+                <span className="px-2 py-0.5 bg-amber-400/15 text-amber-300 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-400/30">
                   {currentQuestion?.section}
                 </span>
                 <h1 className="text-xl font-bold">Question {currentIndex + 1} of {filteredQuestions.length}</h1>
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${
                   violationCount >= 2
-                    ? "bg-red-500/10 text-red-500 border-red-500/30"
-                    : "bg-gray-100 text-gray-600 border-gray-300"
+                    ? "bg-red-500/15 text-red-300 border-red-500/30"
+                    : "bg-zinc-800 text-zinc-300 border-zinc-600"
                 }`}>
                   Violations: {violationCount}/3
                 </span>
               </div>
-              <div className="w-full bg-gray-100 h-1 mt-2 rounded-full overflow-hidden">
+              <div className="w-full bg-zinc-700 h-1 mt-2 rounded-full overflow-hidden">
                 <div 
-                  className="bg-yellow-500 h-full transition-all duration-1000" 
+                  className="bg-amber-400 h-full transition-all duration-1000" 
                   style={{ width: `${(timeLeft / (60 * 60)) * 100}%` }}
                 ></div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-500 uppercase font-bold tracking-widest">Overall Time Remaining</p>
-              <p className={`text-2xl font-black ${timeLeft <= 300 ? 'text-red-500 animate-pulse' : 'text-yellow-500'}`}>
+              <p className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Overall Time Remaining</p>
+              <p className={`text-2xl font-black ${timeLeft <= 300 ? 'text-red-300 animate-pulse' : 'text-amber-300'}`}>
                 {minutes}:{seconds.toString().padStart(2, "0")}
               </p>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8 shadow-xl min-h-[400px]">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 mb-8 shadow-xl min-h-[400px]">
             {currentQuestion ? (
               <>
                 <p className="text-xl font-medium mb-8 leading-relaxed">
@@ -224,8 +257,8 @@ export default function AttemptPage() {
                         key={opt.id} 
                         className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${
                           answers[currentQuestion.id] === opt.id 
-                          ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
-                          : 'bg-gray-100 border-gray-300 hover:border-gray-400 text-gray-600'
+                          ? 'bg-amber-400/10 border-amber-400 text-amber-300' 
+                          : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-200'
                         }`}
                       >
                         <input
@@ -236,9 +269,9 @@ export default function AttemptPage() {
                           className="hidden"
                         />
                         <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
-                          answers[currentQuestion.id] === opt.id ? 'border-yellow-500' : 'border-gray-300'
+                          answers[currentQuestion.id] === opt.id ? 'border-amber-400' : 'border-zinc-500'
                         }`}>
-                          {answers[currentQuestion.id] === opt.id && <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full"></div>}
+                          {answers[currentQuestion.id] === opt.id && <div className="w-2.5 h-2.5 bg-amber-400 rounded-full"></div>}
                         </div>
                         {opt.text}
                       </label>
@@ -246,7 +279,7 @@ export default function AttemptPage() {
                   </div>
                 ) : (
                   <textarea
-                    className="w-full p-4 bg-gray-100 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:outline-none transition-all"
+                    className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition-all text-zinc-100"
                     rows={6}
                     placeholder="Type your answer here..."
                     value={answers[currentQuestion.id] || ""}
@@ -258,7 +291,7 @@ export default function AttemptPage() {
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500 italic">
+              <div className="flex items-center justify-center h-full text-zinc-400 italic">
                 No questions in this section.
               </div>
             )}
@@ -268,33 +301,42 @@ export default function AttemptPage() {
             <button
               onClick={handlePrevQuestion}
               disabled={currentIndex === 0}
-              className="bg-gray-100 text-gray-900 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="bg-zinc-800 text-zinc-100 px-8 py-3 rounded-xl font-bold border border-zinc-600 hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
               ← Previous
             </button>
             <div className="flex gap-4">
-              {currentIndex === filteredQuestions.length - 1 ? (
-                <button
-                  onClick={async () => {
-                    const confirmed = await openConfirmDialog({
-                      title: "Submit Assessment",
-                      message: "Are you sure you want to submit the entire assessment?",
-                      confirmText: "Submit",
-                    });
-                    if (confirmed) {
-                      handleSubmit();
-                    }
-                  }}
-                  className="bg-green-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-green-500 transition-all shadow-lg"
-                >
-                  Submit Assessment
-                </button>
+              {isSectionBoundary ? (
+                nextSection ? (
+                  <button
+                    onClick={handleNextSection}
+                    className="bg-amber-300 text-black px-10 py-3 rounded-xl font-bold hover:bg-amber-200 transition-all shadow-lg"
+                  >
+                    Next Section -&gt;
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      const confirmed = await openConfirmDialog({
+                        title: "Submit Assessment",
+                        message: "Are you sure you want to submit the entire assessment?",
+                        confirmText: "Submit",
+                      });
+                      if (confirmed) {
+                        handleSubmit();
+                      }
+                    }}
+                    className="bg-emerald-500 text-black px-10 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg"
+                  >
+                    Submit Assessment
+                  </button>
+                )
               ) : (
                 <button
                   onClick={handleNextQuestion}
-                  className="bg-yellow-500 text-black px-10 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-all shadow-lg"
+                  className="bg-amber-400 text-black px-10 py-3 rounded-xl font-bold hover:bg-amber-300 transition-all shadow-lg"
                 >
-                  Next Question →
+                  Next Question -&gt;
                 </button>
               )}
             </div>
@@ -302,8 +344,8 @@ export default function AttemptPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xl sticky top-6">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">Question Palette</h3>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-xl sticky top-6">
+            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Question Palette</h3>
             <div className="grid grid-cols-4 gap-2 mb-8">
               {filteredQuestions.map((q, idx) => (
                 <button
@@ -311,10 +353,10 @@ export default function AttemptPage() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`w-full aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all border ${
                     currentIndex === idx
-                      ? 'bg-yellow-500 text-black border-yellow-500'
+                      ? 'bg-amber-400 text-black border-amber-400'
                       : answers[q.id]
-                        ? 'bg-green-500/20 text-green-500 border-green-500/30'
-                        : 'bg-gray-100 text-gray-500 border-gray-300 hover:border-gray-400'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                        : 'bg-zinc-800 text-zinc-300 border-zinc-600 hover:border-zinc-500'
                   }`}
                 >
                   {idx + 1}
@@ -323,23 +365,23 @@ export default function AttemptPage() {
             </div>
             
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <div className="w-3 h-3 bg-green-500/20 border border-green-500/30 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <div className="w-3 h-3 bg-emerald-500/20 border border-emerald-500/30 rounded"></div>
                 <span>Answered</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <div className="w-3 h-3 bg-zinc-800 border border-zinc-600 rounded"></div>
                 <span>Not Answered</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <div className="w-3 h-3 bg-amber-400 rounded"></div>
                 <span>Current</span>
               </div>
             </div>
 
             <button
               onClick={() => handleSubmit()}
-              className="w-full mt-8 bg-gray-100 text-gray-900 py-3 rounded-xl text-sm font-bold border border-gray-300 hover:bg-red-600 hover:border-red-500 transition-all"
+              className="w-full mt-8 bg-zinc-800 text-zinc-100 py-3 rounded-xl text-sm font-bold border border-zinc-600 hover:bg-red-700 hover:border-red-500 transition-all"
             >
               Quit Test
             </button>
@@ -349,3 +391,4 @@ export default function AttemptPage() {
     </div>
   );
 }
+

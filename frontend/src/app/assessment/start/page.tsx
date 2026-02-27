@@ -23,9 +23,9 @@ export default function StartAssessmentPage() {
 
   if (authLoading || user?.role?.toUpperCase() === "ADMIN") {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400 mx-auto mb-4"></div>
           <p>Loading...</p>
         </div>
       </div>
@@ -65,18 +65,18 @@ export default function StartAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 max-w-md w-full text-center">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4">
+      <div className="bg-zinc-900 p-8 rounded-xl border border-zinc-700 max-w-md w-full text-center shadow-2xl">
         <h1 className="text-2xl font-bold mb-4">
           Enter Assessment Code
         </h1>
 
-        <p className="text-gray-600 mb-6">
+        <p className="text-zinc-400 mb-6">
           Please enter the unique code provided to you to start the assessment.
         </p>
 
         {error && (
-          <div className="bg-red-500/10 text-red-400 p-3 rounded mb-4 text-sm text-left">
+          <div className="bg-red-500/15 text-red-300 p-3 rounded mb-4 text-sm text-left border border-red-500/30">
             {error}
           </div>
         )}
@@ -86,26 +86,26 @@ export default function StartAssessmentPage() {
           placeholder="Code (e.g. ABCDEF)"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
-          className="w-full p-3 rounded bg-gray-100 border border-gray-300 mb-6 focus:outline-none focus:border-yellow-500 text-center font-mono text-xl tracking-widest"
+          className="w-full p-3 rounded bg-zinc-800 border border-zinc-600 mb-6 focus:outline-none focus:border-amber-400 text-center font-mono text-xl tracking-widest text-zinc-100"
           maxLength={10}
         />
 
         <button
           onClick={startAssessment}
           disabled={loading}
-          className="w-full bg-yellow-500 text-black px-6 py-3 rounded font-semibold hover:bg-yellow-400 transition"
+          className="w-full bg-amber-400 text-black px-6 py-3 rounded font-semibold hover:bg-amber-300 transition"
         >
           {loading ? "Starting..." : "Start Assessment"}
         </button>
 
         <Link
           href="/results"
-          className="block w-full mt-3 bg-gray-100 text-gray-900 px-6 py-3 rounded font-semibold hover:bg-gray-200 transition"
+          className="block w-full mt-3 bg-zinc-800 text-zinc-100 px-6 py-3 rounded font-semibold border border-zinc-600 hover:bg-zinc-700 transition"
         >
           View Results
         </Link>
 
-        <p className="mt-4 text-xs text-gray-500">
+        <p className="mt-4 text-xs text-zinc-400">
           Once started, fullscreen mode will be enforced and the timer begins.
         </p>
       </div>

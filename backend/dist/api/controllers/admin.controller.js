@@ -13,6 +13,8 @@ exports.getDescriptiveAnswers = getDescriptiveAnswers;
 exports.gradeDescriptiveAnswer = gradeDescriptiveAnswer;
 exports.publishResult = publishResult;
 exports.deleteAttempt = deleteAttempt;
+exports.deleteAllAttemptsByAssessment = deleteAllAttemptsByAssessment;
+exports.deleteAssessment = deleteAssessment;
 exports.publishAllResults = publishAllResults;
 exports.createAssessment = createAssessment;
 exports.updateAssessment = updateAssessment;
@@ -362,6 +364,63 @@ async function deleteAttempt(req, res) {
     }
     catch (error) {
         console.error("❌ deleteAttempt error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+async function deleteAllAttemptsByAssessment(req, res) {
+    try {
+        const { assessmentId } = req.params;
+        if (!requireObjectIdParam(res, "assessmentId", assessmentId)) {
+            return;
+        }
+        const attempts = await Attempt_1.default.find({ assessment_id: assessmentId })
+            .select("_id")
+            .lean();
+        const attemptIds = attempts.map((a) => a._id);
+        if (attemptIds.length > 0) {
+            await Promise.all([
+                Answer_1.default.deleteMany({ attempt_id: { $in: attemptIds } }),
+                Violation_1.default.deleteMany({ attempt_id: { $in: attemptIds } }),
+            ]);
+        }
+        const deleteResult = await Attempt_1.default.deleteMany({ assessment_id: assessmentId });
+        res.json({
+            message: "All attempts deleted successfully",
+            count: deleteResult.deletedCount ?? 0,
+        });
+    }
+    catch (error) {
+        console.error("❌ deleteAllAttemptsByAssessment error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+async function deleteAssessment(req, res) {
+    try {
+        const { assessmentId } = req.params;
+        if (!requireObjectIdParam(res, "assessmentId", assessmentId)) {
+            return;
+        }
+        const assessment = await Assessment_1.default.findById(assessmentId).select("_id").lean();
+        if (!assessment) {
+            return res.status(404).json({ message: "Assessment not found" });
+        }
+        const attempts = await Attempt_1.default.find({ assessment_id: assessmentId })
+            .select("_id")
+            .lean();
+        const attemptIds = attempts.map((a) => a._id);
+        if (attemptIds.length > 0) {
+            await Promise.all([
+                Answer_1.default.deleteMany({ attempt_id: { $in: attemptIds } }),
+                Violation_1.default.deleteMany({ attempt_id: { $in: attemptIds } }),
+            ]);
+            await Attempt_1.default.deleteMany({ assessment_id: assessmentId });
+        }
+        await Question_1.default.deleteMany({ assessment_id: assessmentId });
+        await Assessment_1.default.deleteOne({ _id: assessmentId });
+        res.json({ message: "Assessment deleted successfully" });
+    }
+    catch (error) {
+        console.error("❌ deleteAssessment error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }

@@ -12,6 +12,9 @@ export default function AdminLayout({
 }) {
   const { loading } = useAdmin();
   const pathname = usePathname();
+  const isAssessmentsRoute = pathname === "/admin/assessments" || pathname.startsWith("/admin/assessments/");
+  const isCandidatesRoute = pathname === "/admin/candidates" || pathname.startsWith("/admin/candidates/");
+  const isAdminsRoute = pathname === "/admin/admins" || pathname.startsWith("/admin/admins/");
 
   if (loading) {
     return (
@@ -35,7 +38,7 @@ export default function AdminLayout({
               <Link 
                 href="/admin/assessments" 
                 className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
-                  pathname.includes("/assessments")
+                  isAssessmentsRoute
                     ? "border-yellow-300 bg-yellow-100 text-yellow-800 shadow-sm"
                     : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
@@ -45,7 +48,7 @@ export default function AdminLayout({
               <Link 
                 href="/admin/candidates" 
                 className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
-                  pathname.includes("/candidates")
+                  isCandidatesRoute
                     ? "border-blue-300 bg-blue-100 text-blue-800 shadow-sm"
                     : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
@@ -55,7 +58,7 @@ export default function AdminLayout({
               <Link 
                 href="/admin/admins" 
                 className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
-                  pathname.includes("/admins")
+                  isAdminsRoute
                     ? "border-violet-300 bg-violet-100 text-violet-800 shadow-sm"
                     : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}

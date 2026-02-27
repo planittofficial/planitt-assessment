@@ -9,6 +9,8 @@ import {
   gradeDescriptiveAnswer,
   publishResult,
   deleteAttempt,
+  deleteAllAttemptsByAssessment,
+  deleteAssessment,
   publishAllResults,
   createAssessment,
   updateAssessment,
@@ -51,10 +53,14 @@ router.delete("/attempts/:attemptId", deleteAttempt);
 router.post("/attempts/:attemptId/delete", deleteAttempt);
 router.delete("/assessments/:assessmentId/attempts/:attemptId", deleteAttempt);
 router.post("/assessments/:assessmentId/attempts/:attemptId/delete", deleteAttempt);
+router.delete("/assessments/:assessmentId/attempts", deleteAllAttemptsByAssessment);
+router.post("/assessments/:assessmentId/attempts/delete", deleteAllAttemptsByAssessment);
 router.post("/assessments/:assessmentId/publish-all", publishAllResults);
 
 router.post("/assessments", createAssessment);
 router.patch("/assessments/:assessmentId", updateAssessment);
+router.delete("/assessments/:assessmentId", deleteAssessment);
+router.post("/assessments/:assessmentId/delete", deleteAssessment);
 router.post("/assessments/:assessmentId/questions", addQuestion);
 router.post("/assessments/:assessmentId/questions/bulk", bulkAddQuestions);
 router.delete("/assessments/:assessmentId/questions/:questionId", deleteQuestion);

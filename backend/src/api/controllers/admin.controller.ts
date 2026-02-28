@@ -613,8 +613,10 @@ async function processQuestionPayload(payload: any): Promise<any> {
     question_type: normalizedType,
     marks: numericMarks,
     correct_answer:
-      normalizedType === "descriptive" ? null : (correct_answer ?? null),
-    options: options ?? null,
+      normalizedType === "descriptive"
+        ? String(correct_answer ?? "").trim() || null
+        : (correct_answer ?? null),
+    options: normalizedType === "mcq" ? (options ?? null) : null,
     section: normalizedSection,
   };
 }

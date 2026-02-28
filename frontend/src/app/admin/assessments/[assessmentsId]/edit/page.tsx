@@ -129,6 +129,12 @@ export default function EditAssessmentPage() {
           } else {
             currentQ.correct_answer = ansKey;
           }
+        } else if (
+          line.toLowerCase().startsWith("expected:") ||
+          line.toLowerCase().startsWith("model answer:") ||
+          line.toLowerCase().startsWith("rubric:")
+        ) {
+          currentQ.correct_answer = line.split(":").slice(1).join(":").trim();
         } else if (line.toLowerCase().startsWith("marks:")) {
           currentQ.marks = Number(line.split(":")[1].trim()) || 1;
         } else if (line.toLowerCase().startsWith("section:")) {
@@ -349,7 +355,8 @@ export default function EditAssessmentPage() {
               <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                 Paste your questions below or upload a JSON file. Format: <br/>
                 1. Question? <br/>
-                A) Option, Correct: A, Marks: 2
+                A) Option, Correct: A, Marks: 2 <br/>
+                For descriptive: add `Expected:` or `Rubric:` line for auto-grading quality.
               </p>
               <textarea
                 value={smartPasteText}
@@ -378,7 +385,9 @@ export default function EditAssessmentPage() {
                       <div className="flex gap-4 text-[10px] text-gray-500 uppercase font-bold">
                         <span>{q.question_type}</span>
                         <span>{q.marks} Marks</span>
-                        <span className="text-green-500">Ans: {q.correct_answer}</span>
+                        <span className="text-green-500">
+                          {q.question_type === "DESCRIPTIVE" ? "Rubric" : "Ans"}: {q.correct_answer || "-"}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -476,6 +485,21 @@ export default function EditAssessmentPage() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+              {newQuestion.question_type === "DESCRIPTIVE" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Expected Answer / Rubric (for automated evaluation)
+                  </label>
+                  <textarea
+                    value={newQuestion.correct_answer}
+                    onChange={(e) =>
+                      setNewQuestion({ ...newQuestion, correct_answer: e.target.value })
+                    }
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors h-28"
+                    placeholder="Write the model answer or rubric points for auto-grading."
+                  />
                 </div>
               )}
               <button

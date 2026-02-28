@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "./auth.middleware";
 import { enforceTimeLimit } from "../../services/timer.service";
-import { isUuid } from "../../utils/validation";
+import mongoose from "mongoose";
 
 export async function enforceAttemptTimer(
   req: AuthRequest,
@@ -15,7 +15,7 @@ export async function enforceAttemptTimer(
 
   if (!attemptId) return next();
 
-  if (!isUuid(String(attemptId))) {
+  if (!mongoose.Types.ObjectId.isValid(String(attemptId))) {
     return res.status(400).json({ message: "Invalid attemptId" });
   }
 

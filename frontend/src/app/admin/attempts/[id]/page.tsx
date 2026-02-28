@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getDescriptiveAnswers, gradeDescriptiveAnswer, getAttemptSummary } from "@/services/admin.service";
 import { notifyError } from "@/lib/notify";
@@ -9,6 +10,7 @@ import { openPromptDialog } from "@/lib/dialog";
 
 export default function AttemptReviewPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [answers, setAnswers] = useState<any[]>([]);
   const [attempt, setAttempt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,12 @@ export default function AttemptReviewPage() {
   return (
     <>
       <div className="max-w-4xl mx-auto">
+        <button
+          onClick={() => router.back()}
+          className="text-gray-600 hover:text-gray-900 transition-colors mb-4 flex items-center gap-2 text-sm"
+        >
+          ← Back
+        </button>
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Review Descriptive Answers</h1>
@@ -119,6 +127,7 @@ export default function AttemptReviewPage() {
             ))}
           </div>
         )}
+      </div>
     </>
   );
 }

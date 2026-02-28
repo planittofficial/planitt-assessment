@@ -4,7 +4,11 @@ import Assessment from "../../models/Assessment";
 import Question from "../../models/Question";
 import Answer from "../../models/Answer";
 import { AuthRequest } from "../middlewares/auth.middleware";
-import { autoGradeMCQs, calculateFinalScore } from "../../services/scoring.service";
+import {
+  autoGradeDescriptive,
+  autoGradeMCQs,
+  calculateFinalScore,
+} from "../../services/scoring.service";
 import { calculatePassFail } from "../../services/result.service";
 import { isActiveAttemptStatus } from "../../utils/attempt-status";
 import mongoose from "mongoose";
@@ -229,6 +233,7 @@ export async function submitAttempt(req: AuthRequest, res: Response) {
     await markAttemptCompleted(attemptId);
 
     await autoGradeMCQs(attemptId);
+    await autoGradeDescriptive(attemptId);
     const score = await calculateFinalScore(attemptId);
     try {
       await calculatePassFail(attemptId);

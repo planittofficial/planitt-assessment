@@ -8,7 +8,8 @@
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "create-admin": "ts-node src/scripts/createAdminUser.ts",
-    "delete-user": "ts-node src/scripts/deleteUser.ts"
+    "delete-user": "ts-node src/scripts/deleteUser.ts",
+    "backfill-descriptive": "ts-node src/scripts/backfillDescriptiveGrades.ts"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",

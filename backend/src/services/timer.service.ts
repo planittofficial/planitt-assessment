@@ -1,5 +1,11 @@
 import Attempt from "../models/Attempt";
 import { isActiveAttemptStatus } from "../utils/attempt-status";
+import {
+  autoGradeDescriptive,
+  autoGradeMCQs,
+  calculateFinalScore,
+} from "./scoring.service";
+import { calculatePassFail } from "./result.service";
 
 /**
  * Checks if an attempt has exceeded its allowed duration.
@@ -30,6 +36,16 @@ export async function enforceTimeLimit(attemptId: string) {
       submitted_at: new Date(),
       auto_submitted: true,
     });
+
+    await autoGradeMCQs(attemptId);
+    await autoGradeDescriptive(attemptId);
+    await calculateFinalScore(attemptId);
+
+    try {
+      await calculatePassFail(attemptId);
+    } catch {
+      // Keep timer auto-submit resilient even if pass/fail config is incomplete.
+    }
 
     return { expired: true };
   }

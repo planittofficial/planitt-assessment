@@ -6,6 +6,11 @@ import { checkAutoSubmit } from "../../services/violation.service";
 import { enforceTimeLimit } from "../../services/timer.service";
 import { isActiveAttemptStatus } from "../../utils/attempt-status";
 import mongoose from "mongoose";
+import {
+  autoGradeDescriptive,
+  autoGradeMCQs,
+  calculateFinalScore,
+} from "../../services/scoring.service";
 
 export async function logViolation(req: AuthRequest, res: Response) {
   try {
@@ -65,6 +70,9 @@ export async function logViolation(req: AuthRequest, res: Response) {
         auto_submitted: true,
         result: "FAIL",
       });
+      await autoGradeMCQs(attemptId);
+      await autoGradeDescriptive(attemptId);
+      await calculateFinalScore(attemptId);
 
       return res.status(200).json({
         message: "Violation logged. Attempt auto-submitted.",

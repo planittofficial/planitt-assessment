@@ -185,6 +185,7 @@ export default function AttemptResultsPage() {
             </div>
           ))}
         </div>
+      </div>
     </>
   );
 }

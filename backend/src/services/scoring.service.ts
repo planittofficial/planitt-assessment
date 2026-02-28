@@ -1,5 +1,6 @@
 import Answer from "../models/Answer";
 import Attempt from "../models/Attempt";
+import "../models/Question";
 
 const STOP_WORDS = new Set([
   "a",
@@ -49,6 +50,49 @@ function tokenize(value: unknown) {
     .split(" ")
     .map((token) => token.trim())
     .filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+}
+
+function extractKeywords(modelAnswer: string) {
+  const raw = String(modelAnswer || "").trim();
+  if (!raw) return [] as string[];
+
+  // If admin provides comma/newline separated rubric keywords, honor that first.
+  const hasExplicitSeparators = /[,;\n|]/.test(raw);
+  if (hasExplicitSeparators) {
+    const items = raw
+      .split(/[,;\n|]/g)
+      .map((part) => normalizeText(part))
+      .filter(Boolean);
+    return Array.from(new Set(items.flatMap((item) => tokenize(item))));
+  }
+
+  return Array.from(new Set(tokenize(raw)));
+}
+
+function gradeByKeywords(params: {
+  candidateAnswer: string;
+  modelAnswer: string;
+  maxMarks: number;
+}) {
+  const { candidateAnswer, modelAnswer, maxMarks } = params;
+  if (!candidateAnswer || maxMarks <= 0) return 0;
+
+  const expectedKeywords = extractKeywords(modelAnswer);
+  if (expectedKeywords.length === 0) return null;
+
+  const candidateTokens = new Set(tokenize(candidateAnswer));
+  if (candidateTokens.size === 0) return 0;
+
+  let hits = 0;
+  for (const keyword of expectedKeywords) {
+    if (candidateTokens.has(keyword)) {
+      hits += 1;
+    }
+  }
+
+  const ratio = hits / expectedKeywords.length;
+  const marks = maxMarks * clamp(ratio, 0, 1);
+  return Number(clamp(marks, 0, maxMarks).toFixed(2));
 }
 
 function heuristicDescriptiveMarks(params: {
@@ -182,7 +226,7 @@ export async function autoGradeMCQs(attemptId: string) {
     is_graded: false,
   }).populate({
     path: "question_id",
-    match: { question_type: "mcq" },
+    match: { question_type: { $in: ["mcq", "MCQ"] } },
     select: "correct_answer marks",
   });
 
@@ -212,7 +256,7 @@ export async function autoGradeDescriptive(attemptId: string) {
     is_graded: false,
   }).populate({
     path: "question_id",
-    match: { question_type: "descriptive" },
+    match: { question_type: { $in: ["descriptive", "DESCRIPTIVE"] } },
     select: "question_text correct_answer marks",
   });
 
@@ -230,15 +274,14 @@ export async function autoGradeDescriptive(attemptId: string) {
     let marksObtained = 0;
 
     if (candidateAnswer && maxMarks > 0) {
-      const aiMarks = await gradeWithLLM({
-        questionText,
-        modelAnswer,
+      const keywordMarks = gradeByKeywords({
         candidateAnswer,
+        modelAnswer,
         maxMarks,
       });
 
-      if (aiMarks !== null && Number.isFinite(aiMarks)) {
-        marksObtained = Number(clamp(aiMarks, 0, maxMarks).toFixed(2));
+      if (keywordMarks !== null && Number.isFinite(keywordMarks)) {
+        marksObtained = keywordMarks;
       } else {
         marksObtained = heuristicDescriptiveMarks({
           candidateAnswer,

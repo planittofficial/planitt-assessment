@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Answer from "../models/Answer";
 import Attempt from "../models/Attempt";
+import "../models/Question";
+import "../models/Assessment";
 import {
   autoGradeDescriptive,
   autoGradeMCQs,

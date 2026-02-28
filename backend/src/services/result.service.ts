@@ -1,5 +1,5 @@
 import Attempt from "../models/Attempt";
-import Assessment from "../models/Assessment";
+import "../models/Assessment";
 
 /**
  * Calculates PASS / FAIL for an attempt

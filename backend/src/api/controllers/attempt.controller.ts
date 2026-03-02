@@ -11,6 +11,7 @@ import {
 } from "../../services/scoring.service";
 import { calculatePassFail } from "../../services/result.service";
 import { isActiveAttemptStatus } from "../../utils/attempt-status";
+import { isMobileOrTabletRequest } from "../../utils/device";
 import mongoose from "mongoose";
 import crypto from "crypto";
 
@@ -122,11 +123,22 @@ async function markAttemptCompleted(attemptId: string) {
   );
 }
 
+function ensureDesktopOnly(req: AuthRequest, res: Response) {
+  if (!isMobileOrTabletRequest(req)) return true;
+  res.status(403).json({
+    message:
+      "Assessment is allowed only on desktop or laptop browsers. Mobile and tablet devices are not permitted.",
+    reason: "MOBILE_DEVICE_NOT_ALLOWED",
+  });
+  return false;
+}
+
 export async function startAttempt(req: AuthRequest, res: Response) {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    if (!ensureDesktopOnly(req, res)) return;
 
     const { assessmentId, assessmentCode } = req.body as {
       assessmentId?: string;
@@ -205,6 +217,7 @@ export async function submitAttempt(req: AuthRequest, res: Response) {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    if (!ensureDesktopOnly(req, res)) return;
 
     const { attemptId } = req.body as { attemptId?: string };
     const userId = req.user.userId;
@@ -261,6 +274,7 @@ export async function getQuestions(req: AuthRequest, res: Response) {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    if (!ensureDesktopOnly(req, res)) return;
 
     const attemptId = req.params.attemptId;
     const userId = req.user.userId;
@@ -299,6 +313,7 @@ export async function saveAnswer(req: AuthRequest, res: Response) {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
+    if (!ensureDesktopOnly(req, res)) return;
 
     const attemptId = req.params.attemptId;
     const { questionId: rawQuestionId, answer } = req.body;

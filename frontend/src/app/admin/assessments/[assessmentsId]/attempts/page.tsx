@@ -1,11 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   deleteAllAttemptsByAssessment,
   deleteAttempt,
   getAttemptsByAssessment,
+  getViolationsByAttempt,
   publishAllResults,
 } from "@/services/admin.service";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -13,6 +14,48 @@ import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 
 import Link from "next/link";
+
+type ViolationRecord = {
+  violation_type?: string;
+};
+
+type AttemptItem = {
+  id: string | number;
+  email?: string;
+  status?: string;
+  started_at?: string;
+  submitted_at?: string;
+  start_time?: string;
+  end_time?: string;
+  final_score?: number | string;
+  result?: "PASS" | "FAIL" | string;
+  is_published?: boolean;
+  screen_recording_violations?: number;
+};
+
+const SCREEN_RECORDING_VIOLATION_TYPES = new Set([
+  "FULLSCREEN_EXIT",
+  "TAB_SWITCH",
+  "WINDOW_BLUR",
+  "PAGE_HIDE",
+  "SCREEN_RECORDING_STOPPED",
+  "SCREEN_RECORDING_DISABLED",
+  "SCREEN_RECORDING_PERMISSION_DENIED",
+]);
+
+function isScreenRecordingViolation(type: unknown) {
+  const normalized = String(type || "").trim().toUpperCase();
+  return (
+    SCREEN_RECORDING_VIOLATION_TYPES.has(normalized) ||
+    normalized.includes("SCREEN") ||
+    normalized.includes("RECORD")
+  );
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "N/A";
+  return new Date(value).toLocaleString();
+}
 
 export default function AdminAssessmentAttemptsPage() {
   const { loading: adminLoading } = useAdmin();
@@ -24,28 +67,47 @@ export default function AdminAssessmentAttemptsPage() {
     ? rawAssessmentId[0]
     : rawAssessmentId;
 
-  const [attempts, setAttempts] = useState<any[]>([]);
+  const [attempts, setAttempts] = useState<AttemptItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishingAll, setPublishingAll] = useState(false);
   const [deletingAttemptId, setDeletingAttemptId] = useState<string | number | null>(null);
   const [deletingAllAttempts, setDeletingAllAttempts] = useState(false);
   const [filter, setFilter] = useState<"ALL" | "PASS" | "FAIL">("ALL");
 
-  const loadAttempts = async () => {
+  const loadAttempts = useCallback(async () => {
     if (!assessmentId) return;
     try {
       const data = await getAttemptsByAssessment(assessmentId);
-      setAttempts(data);
+      const attemptsWithViolations = await Promise.all(
+        (data ?? []).map(async (attempt: AttemptItem) => {
+          try {
+            const violations = await getViolationsByAttempt(attempt.id);
+            const screenRecordingViolations = Array.isArray(violations)
+              ? violations.filter((v: ViolationRecord) => isScreenRecordingViolation(v?.violation_type))
+              : [];
+            return {
+              ...attempt,
+              screen_recording_violations: screenRecordingViolations.length,
+            };
+          } catch {
+            return {
+              ...attempt,
+              screen_recording_violations: 0,
+            };
+          }
+        })
+      );
+      setAttempts(attemptsWithViolations);
     } catch (err) {
       console.error("Failed to load attempts", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [assessmentId]);
 
   useEffect(() => {
     loadAttempts();
-  }, [assessmentId]);
+  }, [loadAttempts]);
 
   const handlePublishAll = async () => {
     if (!assessmentId) return;
@@ -95,8 +157,8 @@ export default function AdminAssessmentAttemptsPage() {
         a.status,
         a.final_score ?? "0",
         a.result,
-        (a.started_at ?? a.start_time) ? new Date(a.started_at ?? a.start_time).toLocaleString() : "N/A",
-        (a.submitted_at ?? a.end_time) ? new Date(a.submitted_at ?? a.end_time).toLocaleString() : "N/A"
+        formatDateTime(a.started_at ?? a.start_time),
+        formatDateTime(a.submitted_at ?? a.end_time)
       ].map(field => `"${field}"`).join(","))
     ].join("\n");
 
@@ -249,11 +311,21 @@ export default function AdminAssessmentAttemptsPage() {
                       Published
                     </span>
                   )}
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      Number(a.screen_recording_violations) > 0
+                        ? "bg-red-100 text-red-700"
+                        : "bg-emerald-100 text-emerald-700"
+                    }`}
+                    title="Screen recording related violations"
+                  >
+                    Screen Violations: {Number(a.screen_recording_violations) || 0}
+                  </span>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">{a.email}</h3>
                 <div className="flex gap-4 text-xs text-gray-500">
-                  <p>Started: {(a.started_at ?? a.start_time) ? new Date(a.started_at ?? a.start_time).toLocaleString() : "N/A"}</p>
-                  {(a.submitted_at ?? a.end_time) && <p>Ended: {new Date(a.submitted_at ?? a.end_time).toLocaleString()}</p>}
+                  <p>Started: {formatDateTime(a.started_at ?? a.start_time)}</p>
+                  <p>Ended: {formatDateTime(a.submitted_at ?? a.end_time)}</p>
                 </div>
               </div>
 

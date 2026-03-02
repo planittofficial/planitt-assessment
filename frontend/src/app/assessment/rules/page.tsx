@@ -6,6 +6,7 @@ export default function AssessmentRulesPage() {
   const rules = [
     "Stay in fullscreen mode throughout the assessment.",
     "Do not switch tabs or windows during the attempt.",
+    "Assessment is allowed only on desktop/laptop browsers. Mobile and tablet devices are not permitted.",
     "Each assessment can be attempted only once.",
     "MCQ and descriptive answers are auto-saved as you progress.",
     "Submitting ends the attempt immediately.",

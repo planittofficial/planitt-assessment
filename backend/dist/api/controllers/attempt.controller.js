@@ -14,6 +14,7 @@ const Answer_1 = __importDefault(require("../../models/Answer"));
 const scoring_service_1 = require("../../services/scoring.service");
 const result_service_1 = require("../../services/result.service");
 const attempt_status_1 = require("../../utils/attempt-status");
+const device_1 = require("../../utils/device");
 const mongoose_1 = __importDefault(require("mongoose"));
 const crypto_1 = __importDefault(require("crypto"));
 const QUESTIONS_PER_SECTION = 15;
@@ -103,11 +104,22 @@ async function markAttemptCompleted(attemptId) {
         submitted_at: new Date(),
     }, { new: true });
 }
+function ensureDesktopOnly(req, res) {
+    if (!(0, device_1.isMobileOrTabletRequest)(req))
+        return true;
+    res.status(403).json({
+        message: "Assessment is allowed only on desktop or laptop browsers. Mobile and tablet devices are not permitted.",
+        reason: "MOBILE_DEVICE_NOT_ALLOWED",
+    });
+    return false;
+}
 async function startAttempt(req, res) {
     try {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const { assessmentId, assessmentCode } = req.body;
         const userId = req.user.userId;
         if (!assessmentCode && !assessmentId) {
@@ -168,6 +180,8 @@ async function submitAttempt(req, res) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const { attemptId } = req.body;
         const userId = req.user.userId;
         if (!attemptId) {
@@ -188,6 +202,7 @@ async function submitAttempt(req, res) {
         }
         await markAttemptCompleted(attemptId);
         await (0, scoring_service_1.autoGradeMCQs)(attemptId);
+        await (0, scoring_service_1.autoGradeDescriptive)(attemptId);
         const score = await (0, scoring_service_1.calculateFinalScore)(attemptId);
         try {
             await (0, result_service_1.calculatePassFail)(attemptId);
@@ -215,6 +230,8 @@ async function getQuestions(req, res) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const attemptId = req.params.attemptId;
         const userId = req.user.userId;
         if (!attemptId) {
@@ -243,6 +260,8 @@ async function saveAnswer(req, res) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const attemptId = req.params.attemptId;
         const { questionId: rawQuestionId, answer } = req.body;
         const userId = req.user.userId;

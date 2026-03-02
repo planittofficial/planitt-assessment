@@ -295,8 +295,31 @@ async function gradeDescriptiveAnswer(req, res) {
         if (!requireObjectIdParam(res, "answerId", answerId)) {
             return;
         }
+        const numericMarks = Number(marks);
+        if (!Number.isFinite(numericMarks)) {
+            return res.status(400).json({ message: "marks must be a valid number" });
+        }
+        const existingAnswer = await Answer_1.default.findById(answerId).populate({
+            path: "question_id",
+            select: "marks question_type",
+        });
+        if (!existingAnswer) {
+            return res.status(404).json({ message: "Answer not found" });
+        }
+        const question = existingAnswer.question_id;
+        const maxMarks = Number(question?.marks);
+        const questionType = String(question?.question_type || "").toLowerCase();
+        if (!Number.isFinite(maxMarks)) {
+            return res.status(500).json({ message: "Question max marks is invalid" });
+        }
+        if (questionType !== "descriptive") {
+            return res.status(400).json({ message: "Only descriptive answers can be graded manually" });
+        }
+        if (numericMarks < 0 || numericMarks > maxMarks) {
+            return res.status(400).json({ message: `marks must be between 0 and ${maxMarks}` });
+        }
         const answer = await Answer_1.default.findByIdAndUpdate(answerId, {
-            marks_obtained: marks,
+            marks_obtained: numericMarks,
             is_graded: true,
         }, { new: true });
         if (!answer) {
@@ -558,8 +581,10 @@ async function processQuestionPayload(payload) {
         question_text: String(question_text),
         question_type: normalizedType,
         marks: numericMarks,
-        correct_answer: normalizedType === "descriptive" ? null : (correct_answer ?? null),
-        options: options ?? null,
+        correct_answer: normalizedType === "descriptive"
+            ? String(correct_answer ?? "").trim() || null
+            : (correct_answer ?? null),
+        options: normalizedType === "mcq" ? (options ?? null) : null,
         section: normalizedSection,
     };
 }

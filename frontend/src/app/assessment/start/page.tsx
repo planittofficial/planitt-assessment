@@ -7,6 +7,7 @@ import { attemptService } from "@/services/attempt.service";
 import { enterFullscreen } from "@/hooks/useFullscreen";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
+import { isMobileOrTabletDevice } from "@/lib/device";
 
 export default function StartAssessmentPage() {
   const router = useRouter();
@@ -14,12 +15,20 @@ export default function StartAssessmentPage() {
   const [loading, setLoading] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!authLoading && user?.role?.toUpperCase() === "ADMIN") {
       router.push("/admin");
     }
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setIsMobileDevice(isMobileOrTabletDevice());
+    }, 0);
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   if (authLoading || user?.role?.toUpperCase() === "ADMIN") {
     return (
@@ -33,6 +42,11 @@ export default function StartAssessmentPage() {
   }
 
   async function startAssessment() {
+    if (isMobileDevice) {
+      setError("Assessment can only be started on a desktop or laptop browser.");
+      return;
+    }
+
     if (!code.trim()) {
       setError("Please enter an assessment code");
       return;
@@ -75,6 +89,12 @@ export default function StartAssessmentPage() {
           Please enter the unique code provided to you to start the assessment.
         </p>
 
+        {isMobileDevice && (
+          <div className="bg-red-500/15 text-red-300 p-3 rounded mb-4 text-sm text-left border border-red-500/30">
+            Assessment is available only in desktop mode. Please use a desktop or laptop browser.
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-500/15 text-red-300 p-3 rounded mb-4 text-sm text-left border border-red-500/30">
             {error}
@@ -86,14 +106,15 @@ export default function StartAssessmentPage() {
           placeholder="Code (e.g. ABCDEF)"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
+          disabled={isMobileDevice === true}
           className="w-full p-3 rounded bg-zinc-800 border border-zinc-600 mb-6 focus:outline-none focus:border-amber-400 text-center font-mono text-xl tracking-widest text-zinc-100"
           maxLength={10}
         />
 
         <button
           onClick={startAssessment}
-          disabled={loading}
-          className="w-full bg-amber-400 text-black px-6 py-3 rounded font-semibold hover:bg-amber-300 transition"
+          disabled={loading || isMobileDevice === true || isMobileDevice === null}
+          className="w-full bg-amber-400 text-black px-6 py-3 rounded font-semibold hover:bg-amber-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Starting..." : "Start Assessment"}
         </button>

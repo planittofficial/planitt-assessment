@@ -6,7 +6,7 @@ import { violationService } from "@/services/violation.service";
 import { useRouter } from "next/navigation";
 import { notifyError, notifyInfo } from "@/lib/notify";
 
-export function useViolation(attemptId: string) {
+export function useViolation(attemptId: string, enabled = true) {
   const router = useRouter();
   const [violationCount, setViolationCount] = useState(0);
   const [requireFullscreen, setRequireFullscreen] = useState(false);
@@ -25,7 +25,7 @@ export function useViolation(attemptId: string) {
   }
 
   useEffect(() => {
-    if (!attemptId) return;
+    if (!attemptId || !enabled) return;
 
     violationService
       .getCount(attemptId)
@@ -101,7 +101,7 @@ export function useViolation(attemptId: string) {
       window.removeEventListener("blur", onWindowBlur);
       window.removeEventListener("pagehide", onPageHide);
     };
-  }, [attemptId, router]);
+  }, [attemptId, enabled, router]);
 
   return {
     violationCount,

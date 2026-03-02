@@ -10,12 +10,25 @@ const Violation_1 = __importDefault(require("../../models/Violation"));
 const violation_service_1 = require("../../services/violation.service");
 const timer_service_1 = require("../../services/timer.service");
 const attempt_status_1 = require("../../utils/attempt-status");
+const device_1 = require("../../utils/device");
 const mongoose_1 = __importDefault(require("mongoose"));
+const scoring_service_1 = require("../../services/scoring.service");
+function ensureDesktopOnly(req, res) {
+    if (!(0, device_1.isMobileOrTabletRequest)(req))
+        return true;
+    res.status(403).json({
+        message: "Assessment is allowed only on desktop or laptop browsers. Mobile and tablet devices are not permitted.",
+        reason: "MOBILE_DEVICE_NOT_ALLOWED",
+    });
+    return false;
+}
 async function logViolation(req, res) {
     try {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const { attemptId, violationType } = req.body;
         const userId = req.user.userId;
         if (!attemptId || !violationType) {
@@ -58,6 +71,9 @@ async function logViolation(req, res) {
                 auto_submitted: true,
                 result: "FAIL",
             });
+            await (0, scoring_service_1.autoGradeMCQs)(attemptId);
+            await (0, scoring_service_1.autoGradeDescriptive)(attemptId);
+            await (0, scoring_service_1.calculateFinalScore)(attemptId);
             return res.status(200).json({
                 message: "Violation logged. Attempt auto-submitted.",
                 autoSubmitted: true,
@@ -81,6 +97,8 @@ async function getViolationCount(req, res) {
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized" });
         }
+        if (!ensureDesktopOnly(req, res))
+            return;
         const { attemptId } = req.params;
         const userId = req.user.userId;
         if (!attemptId) {

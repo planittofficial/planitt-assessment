@@ -7,6 +7,7 @@ import { useViolation } from "@/hooks/useViolation";
 import { Question } from "@/types";
 import { notifyError, notifyInfo } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
+import { isMobileOrTabletDevice } from "@/lib/device";
 
 export default function AttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -24,12 +25,13 @@ export default function AttemptPage() {
   const [showReconnectedBanner, setShowReconnectedBanner] = useState(false);
   const [isRetryingFailedAnswers, setIsRetryingFailedAnswers] = useState(false);
   const [failedAnswers, setFailedAnswers] = useState<Record<string, string>>({});
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean | null>(null);
 
   const {
     violationCount,
     requireFullscreen,
     requestAssessmentFullscreen,
-  } = useViolation(id);
+  } = useViolation(id, isMobileDevice === false);
 
   const sections = ["Quantitative", "Verbal", "Coding", "Logical"];
 
@@ -64,10 +66,18 @@ export default function AttemptPage() {
   }, [timeLeft, questions.length, submittedScore, handleSubmit]);
 
   useEffect(() => {
+    if (isMobileDevice !== false) return;
     attemptService.getQuestions(id).then((data) => {
       setQuestions(data);
     });
-  }, [id]);
+  }, [id, isMobileDevice]);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setIsMobileDevice(isMobileOrTabletDevice());
+    }, 0);
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   const filteredQuestions = questions.filter(q => q.section === selectedSection);
   const sectionStats = sections.map((section) => {
@@ -227,6 +237,34 @@ export default function AttemptPage() {
     setSelectedSection(nextSection);
     setCurrentIndex(0);
   };
+
+  if (isMobileDevice === null) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+        <p className="animate-pulse">Checking device compatibility...</p>
+      </div>
+    );
+  }
+
+  if (isMobileDevice) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-8 text-center shadow-2xl">
+          <h1 className="text-3xl font-bold mb-3">Desktop Mode Required</h1>
+          <p className="text-zinc-300 mb-6">
+            This assessment cannot be taken on mobile or tablet devices.
+            Please open it on a desktop or laptop browser.
+          </p>
+          <button
+            onClick={() => router.push("/assessment/start")}
+            className="bg-amber-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-amber-300 transition"
+          >
+            Back to Start
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (submittedScore !== null) {
     // ... success UI

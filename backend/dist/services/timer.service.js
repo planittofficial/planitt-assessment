@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.enforceTimeLimit = enforceTimeLimit;
 const Attempt_1 = __importDefault(require("../models/Attempt"));
 const attempt_status_1 = require("../utils/attempt-status");
+const scoring_service_1 = require("./scoring.service");
+const result_service_1 = require("./result.service");
 /**
  * Checks if an attempt has exceeded its allowed duration.
  * If yes → auto-submit.
@@ -31,6 +33,15 @@ async function enforceTimeLimit(attemptId) {
             submitted_at: new Date(),
             auto_submitted: true,
         });
+        await (0, scoring_service_1.autoGradeMCQs)(attemptId);
+        await (0, scoring_service_1.autoGradeDescriptive)(attemptId);
+        await (0, scoring_service_1.calculateFinalScore)(attemptId);
+        try {
+            await (0, result_service_1.calculatePassFail)(attemptId);
+        }
+        catch {
+            // Keep timer auto-submit resilient even if pass/fail config is incomplete.
+        }
         return { expired: true };
     }
     return { expired: false };

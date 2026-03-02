@@ -24,6 +24,11 @@ export default function AdminPage() {
     loadStats();
   }, []);
 
+  const totalPass = Number(stats?.summary?.total_pass ?? 0);
+  const totalFail = Number(stats?.summary?.total_fail ?? 0);
+  const totalEvaluated = totalPass + totalFail;
+  const passRate = totalEvaluated > 0 ? Math.round((totalPass / totalEvaluated) * 100) : 0;
+
   const handleExportPassed = () => {
     if (!stats?.recentResults) return;
     
@@ -103,12 +108,30 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <div className="relative z-10 mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50 to-white p-5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">Pass Rate</p>
+          <p className="mt-1 text-3xl font-black text-emerald-700">{passRate}%</p>
+          <p className="mt-1 text-xs text-emerald-900/70">{totalPass} pass out of {totalEvaluated} evaluated attempts</p>
+        </div>
+        <div className="rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-white p-5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-700">Total Assessments</p>
+          <p className="mt-1 text-3xl font-black text-sky-800">{stats?.summary?.total_assessments ?? 0}</p>
+          <p className="mt-1 text-xs text-sky-900/70">Manage and monitor all assessment pipelines</p>
+        </div>
+        <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-r from-violet-50 to-white p-5 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-700">Recent Results</p>
+          <p className="mt-1 text-3xl font-black text-violet-800">{stats?.recentResults?.length ?? 0}</p>
+          <p className="mt-1 text-xs text-violet-900/70">Latest candidate outcomes across assessments</p>
+        </div>
+      </div>
+
       {/* Summary Stats */}
       <div className="relative z-10 mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Total Assessments" value={stats?.summary?.total_assessments} color="text-yellow-500" />
-          <StatCard title="Total Candidates" value={stats?.summary?.total_candidates} color="text-blue-500" />
-          <StatCard title="Total Pass" value={stats?.summary?.total_pass} color="text-green-500" />
-          <StatCard title="Total Fail" value={stats?.summary?.total_fail} color="text-red-500" />
+          <StatCard title="Total Assessments" value={stats?.summary?.total_assessments} color="text-amber-600" icon="A" />
+          <StatCard title="Total Candidates" value={stats?.summary?.total_candidates} color="text-sky-700" icon="C" />
+          <StatCard title="Total Pass" value={stats?.summary?.total_pass} color="text-emerald-700" icon="P" />
+          <StatCard title="Total Fail" value={stats?.summary?.total_fail} color="text-rose-700" icon="F" />
       </div>
 
       <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -177,7 +200,7 @@ export default function AdminPage() {
                           <p className="text-[10px] text-slate-500">{r.full_name || "-"}</p>
                         </td>
                         <td className="max-w-[150px] truncate px-6 py-4 text-xs text-slate-700">{r.assessment_title}</td>
-                        <td className="px-6 py-4 text-sm font-mono text-slate-900">{r.final_score}</td>
+                        <td className="px-6 py-4 text-sm font-mono font-semibold text-slate-900">{r.final_score}</td>
                         <td className="px-6 py-4">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                             r.result === "PASS" ? "bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-200" : "bg-rose-500/10 text-rose-700 ring-1 ring-rose-200"
@@ -217,10 +240,15 @@ function formatDateForUi(value: string | null): string {
   return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleDateString();
 }
 
-function StatCard({ title, value, color }: { title: string, value: any, color: string }) {
+function StatCard({ title, value, color, icon }: { title: string, value: any, color: string, icon: string }) {
   return (
     <div className="group rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-200/40 transition-all hover:-translate-y-1 hover:shadow-xl">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">{title}</p>
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-[10px] font-extrabold text-slate-600">
+          {icon}
+        </span>
+      </div>
       <p className={`text-3xl font-black ${color}`}>{value ?? 0}</p>
     </div>
   );

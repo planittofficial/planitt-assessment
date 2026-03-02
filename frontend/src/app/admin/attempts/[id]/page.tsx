@@ -109,7 +109,16 @@ export default function AttemptReviewPage() {
                           inputPlaceholder: "Marks",
                         });
                         if (entered === null) return;
-                        grade(a.id, Number(entered));
+                        const parsedMarks = Number(entered);
+                        if (!Number.isFinite(parsedMarks)) {
+                          notifyError(`Please enter a valid number between 0 and ${a.marks}`);
+                          return;
+                        }
+                        if (parsedMarks < 0 || parsedMarks > a.marks) {
+                          notifyError(`Marks must be between 0 and ${a.marks}`);
+                          return;
+                        }
+                        grade(a.id, parsedMarks);
                       }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-gray-300"
                     >

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { getAdmins, addAdmin, deleteAdmin } from "@/services/admin.service";
-import Link from "next/link";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<any[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -58,11 +58,55 @@ export default function AdminsPage() {
     if (!confirmed) return;
     try {
       await deleteAdmin(id);
+      setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
       await loadAdmins();
       notifySuccess("Admin deleted successfully");
     } catch (err: unknown) {
       console.error("Failed to delete admin", err);
       notifyError("Failed to delete admin");
+    }
+  };
+
+  const handleBulkDeleteAdmins = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete Administrators",
+      message: `Are you sure you want to delete ${ids.length} administrator(s)?`,
+      confirmText: "Delete All",
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(ids.map((id) => deleteAdmin(id)));
+      setSelectedIds([]);
+      await loadAdmins();
+      notifySuccess("Selected administrators deleted successfully");
+    } catch (err: unknown) {
+      console.error("Failed to delete selected administrators", err);
+      notifyError("Failed to delete selected administrators");
+    }
+  };
+
+  const handleDeleteAllAdmins = async () => {
+    if (admins.length === 0) return;
+    const allIds = admins.map((admin) => admin.id);
+    await handleBulkDeleteAdmins(allIds);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === admins.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(admins.map((admin) => admin.id));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
+    } else {
+      setSelectedIds((prev) => [...prev, id]);
     }
   };
 
@@ -125,12 +169,38 @@ export default function AdminsPage() {
             Administrators 
             <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{admins.length}</span>
           </h2>
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={() => handleBulkDeleteAdmins(selectedIds)}
+                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+              >
+                🗑️ Delete Selected ({selectedIds.length})
+              </button>
+            )}
+            {admins.length > 0 && (
+              <button
+                onClick={handleDeleteAllAdmins}
+                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+              >
+                🗑️ Delete All Admins
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300 text-gray-600 text-[10px] uppercase tracking-widest font-black">
+                <th className="px-6 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={admins.length > 0 && selectedIds.length === admins.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 bg-white text-yellow-500 focus:ring-yellow-500 focus:ring-offset-white"
+                  />
+                </th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Full Name</th>
                 <th className="px-6 py-4">Added On</th>
@@ -140,13 +210,21 @@ export default function AdminsPage() {
             <tbody className="divide-y divide-gray-200">
               {admins.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500 italic">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 italic">
                     No administrators found.
                   </td>
                 </tr>
               ) : (
                 admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-gray-100/30 transition-colors">
+                  <tr key={admin.id} className={`hover:bg-gray-100/30 transition-colors ${selectedIds.includes(admin.id) ? "bg-yellow-500/5" : ""}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(admin.id)}
+                        onChange={() => toggleSelectOne(admin.id)}
+                        className="w-4 h-4 rounded border-gray-300 bg-white text-yellow-500 focus:ring-yellow-500 focus:ring-offset-white"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{admin.email}</div>
                     </td>

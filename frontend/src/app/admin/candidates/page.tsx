@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { getCandidates, addCandidate, bulkAddCandidates, deleteCandidate, bulkDeleteCandidates } from "@/services/admin.service";
-import Link from "next/link";
 import { Candidate } from "@/types";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
@@ -148,6 +147,27 @@ export default function CandidatesPage() {
     }
   };
 
+  const handleDeleteAllCandidates = async () => {
+    if (candidates.length === 0) return;
+    const confirmed = await openConfirmDialog({
+      title: "Delete All Candidates",
+      message: "This will permanently delete all candidates. Continue?",
+      confirmText: "Delete All",
+      destructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      const allIds = candidates.map((candidate) => candidate.id);
+      await bulkDeleteCandidates(allIds);
+      setSelectedIds([]);
+      await loadCandidates();
+      notifySuccess("All candidates deleted successfully");
+    } catch (err: unknown) {
+      console.error("Failed to delete all candidates", err);
+      notifyError("Failed to delete all candidates");
+    }
+  };
+
   const toggleSelectAll = () => {
     if (selectedIds.length === candidates.length) {
       setSelectedIds([]);
@@ -248,14 +268,24 @@ export default function CandidatesPage() {
             Candidates 
             <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{candidates.length}</span>
           </h2>
-          {selectedIds.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
-            >
-              🗑️ Delete Selected ({selectedIds.length})
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+              >
+                🗑️ Delete Selected ({selectedIds.length})
+              </button>
+            )}
+            {candidates.length > 0 && (
+              <button
+                onClick={handleDeleteAllCandidates}
+                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+              >
+                🗑️ Delete All Candidates
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
@@ -320,4 +350,3 @@ export default function CandidatesPage() {
     </>
   );
 }
-

@@ -19,6 +19,11 @@ export default function AttemptPage() {
   const [submittedScore, setSubmittedScore] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes in seconds
   const [selectedSection, setSelectedSection] = useState<string>("Quantitative"); // Quantitative first by default
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [showReconnectedBanner, setShowReconnectedBanner] = useState(false);
+  const [isRetryingFailedAnswers, setIsRetryingFailedAnswers] = useState(false);
+  const [failedAnswers, setFailedAnswers] = useState<Record<string, string>>({});
 
   const {
     violationCount,
@@ -65,6 +70,24 @@ export default function AttemptPage() {
   }, [id]);
 
   const filteredQuestions = questions.filter(q => q.section === selectedSection);
+  const sectionStats = sections.map((section) => {
+    const sectionQuestions = questions.filter((q) => q.section === section);
+    const answered = sectionQuestions.filter((q) => {
+      const value = answers[q.id];
+      return typeof value === "string" && value.trim().length > 0;
+    }).length;
+    return {
+      section,
+      total: sectionQuestions.length,
+      answered,
+      unanswered: sectionQuestions.length - answered,
+      questions: sectionQuestions,
+    };
+  });
+  const totalQuestions = questions.length;
+  const totalAnswered = sectionStats.reduce((sum, item) => sum + item.answered, 0);
+  const totalUnanswered = totalQuestions - totalAnswered;
+  const failedAnswerCount = Object.keys(failedAnswers).length;
   const sectionIndex = sections.indexOf(selectedSection);
   const nextSection =
     sectionIndex >= 0 && sectionIndex < sections.length - 1
@@ -93,16 +116,97 @@ export default function AttemptPage() {
     }
   }, [filteredQuestions.length, currentIndex]);
 
+  const retryFailedAnswers = useCallback(async () => {
+    if (submittedScore !== null) return;
+    const pendingEntries = Object.entries(failedAnswers);
+    if (pendingEntries.length === 0) return;
+
+    setIsRetryingFailedAnswers(true);
+    const stillFailed: Record<string, string> = {};
+
+    for (const [questionId, value] of pendingEntries) {
+      try {
+        await attemptService.saveAnswer(id, {
+          questionId,
+          answer: value,
+        });
+      } catch {
+        stillFailed[questionId] = value;
+      }
+    }
+
+    setFailedAnswers(stillFailed);
+    setIsRetryingFailedAnswers(false);
+
+    if (Object.keys(stillFailed).length === 0) {
+      setShowReconnectedBanner(true);
+    }
+  }, [id, failedAnswers, submittedScore]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    setIsOnline(window.navigator.onLine);
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      void retryFailedAnswers();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [retryFailedAnswers]);
+
+  useEffect(() => {
+    if (!showReconnectedBanner) return;
+    const timeout = setTimeout(() => {
+      setShowReconnectedBanner(false);
+    }, 4000);
+
+    return () => clearTimeout(timeout);
+  }, [showReconnectedBanner]);
+
+  const jumpToQuestion = useCallback((questionId: string) => {
+    const targetQuestion = questions.find((q) => q.id === questionId);
+    if (!targetQuestion) return;
+
+    setSelectedSection(targetQuestion.section);
+    const targetIndex = questions
+      .filter((q) => q.section === targetQuestion.section)
+      .findIndex((q) => q.id === questionId);
+    setCurrentIndex(targetIndex >= 0 ? targetIndex : 0);
+    setIsReviewOpen(false);
+  }, [questions]);
+
   async function saveAnswer(qId: string, value: string) {
     if (submittedScore !== null) return;
-    setAnswers({ ...answers, [qId]: value });
+    setAnswers((prev) => ({ ...prev, [qId]: value }));
+    if (typeof window !== "undefined" && !window.navigator.onLine) {
+      setFailedAnswers((prev) => ({ ...prev, [qId]: value }));
+      return;
+    }
     try {
       await attemptService.saveAnswer(id, {
         questionId: qId,
         answer: value,
       });
+      setFailedAnswers((prev) => {
+        if (!(qId in prev)) return prev;
+        const next = { ...prev };
+        delete next[qId];
+        return next;
+      });
     } catch (err) {
       console.error("Failed to save answer", err);
+      setFailedAnswers((prev) => ({ ...prev, [qId]: value }));
     }
   }
 
@@ -172,6 +276,20 @@ export default function AttemptPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      {(!isOnline || isRetryingFailedAnswers || showReconnectedBanner) && (
+        <div className={`sticky top-2 z-50 mb-4 rounded-xl border px-4 py-3 text-sm ${
+          !isOnline
+            ? "bg-red-500/10 border-red-500/40 text-red-200"
+            : isRetryingFailedAnswers
+              ? "bg-amber-500/10 border-amber-500/40 text-amber-100"
+              : "bg-emerald-500/10 border-emerald-500/40 text-emerald-200"
+        }`}>
+          {!isOnline && "Connection unstable: answers are stored locally and will sync once you are back online."}
+          {isRetryingFailedAnswers && "Connection restored. Syncing pending answers..."}
+          {!isRetryingFailedAnswers && isOnline && showReconnectedBanner && "Connection restored. Pending answers synced successfully."}
+        </div>
+      )}
+
       {requireFullscreen && (
         <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-600 rounded-2xl p-6 text-center shadow-2xl">
@@ -195,22 +313,39 @@ export default function AttemptPage() {
         <div className="lg:col-span-3">
           {/* Section Selector */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
-            {sections.map((section) => (
+            {sectionStats.map((sectionInfo) => (
               <button
-                key={section}
+                key={sectionInfo.section}
                 onClick={() => {
-                  setSelectedSection(section);
+                  setSelectedSection(sectionInfo.section);
                   setCurrentIndex(0);
                 }}
-                className={`px-6 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
-                  selectedSection === section
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap border text-left ${
+                  selectedSection === sectionInfo.section
                     ? "bg-amber-400 text-black border-amber-400"
                     : "bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500"
                 }`}
               >
-                {section}
+                <p>{sectionInfo.section}</p>
+                <p className={`text-[11px] ${selectedSection === sectionInfo.section ? "text-black/80" : "text-zinc-400"}`}>
+                  {sectionInfo.answered}/{sectionInfo.total} answered
+                </p>
               </button>
             ))}
+          </div>
+
+          <div className="mb-6 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <p className="text-zinc-300">
+              Progress: <span className="font-bold text-amber-300">{totalAnswered}</span> / {totalQuestions} answered
+            </p>
+            <p className="text-zinc-300">
+              Unanswered: <span className="font-bold text-red-300">{totalUnanswered}</span>
+            </p>
+            {failedAnswerCount > 0 && (
+              <p className="text-zinc-300">
+                Pending Sync: <span className="font-bold text-amber-200">{failedAnswerCount}</span>
+              </p>
+            )}
           </div>
 
           <div className="flex justify-between items-center mb-8 bg-zinc-900 p-4 rounded-xl border border-zinc-700">
@@ -284,7 +419,7 @@ export default function AttemptPage() {
                     placeholder="Type your answer here..."
                     value={answers[currentQuestion.id] || ""}
                     onChange={(e) => {
-                      setAnswers({ ...answers, [currentQuestion.id]: e.target.value });
+                      setAnswers((prev) => ({ ...prev, [currentQuestion.id]: e.target.value }));
                     }}
                     onBlur={(e) => saveAnswer(currentQuestion.id, e.target.value)}
                   />
@@ -316,19 +451,10 @@ export default function AttemptPage() {
                   </button>
                 ) : (
                   <button
-                    onClick={async () => {
-                      const confirmed = await openConfirmDialog({
-                        title: "Submit Assessment",
-                        message: "Are you sure you want to submit the entire assessment?",
-                        confirmText: "Submit",
-                      });
-                      if (confirmed) {
-                        handleSubmit();
-                      }
-                    }}
+                    onClick={() => setIsReviewOpen(true)}
                     className="bg-emerald-500 text-black px-10 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg"
                   >
-                    Submit Assessment
+                    Review & Submit
                   </button>
                 )
               ) : (
@@ -380,14 +506,97 @@ export default function AttemptPage() {
             </div>
 
             <button
-              onClick={() => handleSubmit()}
+              onClick={() => setIsReviewOpen(true)}
               className="w-full mt-8 bg-zinc-800 text-zinc-100 py-3 rounded-xl text-sm font-bold border border-zinc-600 hover:bg-red-700 hover:border-red-500 transition-all"
             >
-              Quit Test
+              Review Before Submit
             </button>
           </div>
         </div>
       </div>
+
+      {isReviewOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/70 p-4 overflow-y-auto">
+          <div className="max-w-4xl mx-auto bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl">
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-zinc-700">
+              <div>
+                <h2 className="text-2xl font-bold">Review Before Submit</h2>
+                <p className="text-sm text-zinc-400 mt-1">
+                  Unanswered: <span className="text-red-300 font-semibold">{totalUnanswered}</span> of {totalQuestions}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsReviewOpen(false)}
+                className="px-3 py-2 rounded-lg border border-zinc-600 text-zinc-200 hover:bg-zinc-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {sectionStats
+                .filter((item) => item.total > 0)
+                .map((item) => (
+                  <div key={item.section} className="bg-zinc-950/60 border border-zinc-700 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-zinc-100">{item.section}</h3>
+                      <p className="text-xs text-zinc-400">
+                        {item.answered}/{item.total} answered, {item.unanswered} unanswered
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {item.questions.map((q, idx) => {
+                        const questionOrder = questions.findIndex((candidate) => candidate.id === q.id) + 1;
+                        const answered = typeof answers[q.id] === "string" && answers[q.id].trim().length > 0;
+                        return (
+                          <button
+                            key={q.id}
+                            onClick={() => jumpToQuestion(q.id)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-bold transition-colors ${
+                              answered
+                                ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/25"
+                                : "bg-zinc-800 border-zinc-600 text-zinc-200 hover:border-zinc-400"
+                            }`}
+                            title={q.question_text}
+                          >
+                            Q{questionOrder} ({idx + 1})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            <div className="p-6 border-t border-zinc-700 flex flex-wrap items-center justify-end gap-3">
+              <button
+                onClick={() => setIsReviewOpen(false)}
+                className="px-5 py-3 rounded-xl border border-zinc-600 bg-zinc-800 hover:bg-zinc-700 transition-colors font-bold"
+              >
+                Continue Attempt
+              </button>
+              <button
+                onClick={async () => {
+                  const confirmed = await openConfirmDialog({
+                    title: "Submit Assessment",
+                    message: totalUnanswered > 0
+                      ? `You still have ${totalUnanswered} unanswered question(s). Submit anyway?`
+                      : "Are you sure you want to submit the entire assessment?",
+                    confirmText: "Submit",
+                  });
+                  if (confirmed) {
+                    setIsReviewOpen(false);
+                    handleSubmit();
+                  }
+                }}
+                className="px-6 py-3 rounded-xl bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-colors"
+              >
+                Submit Assessment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

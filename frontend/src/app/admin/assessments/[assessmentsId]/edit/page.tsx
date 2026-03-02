@@ -17,6 +17,25 @@ type ParsedQuestion = {
   section: string;
 };
 
+function validateUploadedQuestion(question: any): string | null {
+  if (!question || typeof question !== "object") {
+    return "must be an object";
+  }
+  if (!question.question_text || typeof question.question_text !== "string") {
+    return "missing 'question_text' (string)";
+  }
+  if (!question.question_type || !["MCQ", "DESCRIPTIVE"].includes(String(question.question_type).toUpperCase())) {
+    return "invalid 'question_type' (use MCQ or DESCRIPTIVE)";
+  }
+  if (question.marks === undefined || !Number.isFinite(Number(question.marks)) || Number(question.marks) <= 0) {
+    return "invalid 'marks' (must be a positive number)";
+  }
+  if (!question.section || !["Quantitative", "Verbal", "Coding", "Logical"].includes(String(question.section))) {
+    return "invalid 'section' (use Quantitative, Verbal, Coding, or Logical)";
+  }
+  return null;
+}
+
 export default function EditAssessmentPage() {
   const params = useParams();
   const rawAssessmentId = params.assessmentsId;
@@ -158,10 +177,20 @@ export default function EditAssessmentPage() {
       try {
         const json = JSON.parse(event.target?.result as string);
         if (Array.isArray(json)) {
+          if (json.length === 0) {
+            notifyError("Uploaded JSON is empty. Please provide at least one question object.");
+            return;
+          }
+          const invalidIndex = json.findIndex((q) => validateUploadedQuestion(q) !== null);
+          if (invalidIndex !== -1) {
+            const reason = validateUploadedQuestion(json[invalidIndex]);
+            notifyError(`Invalid question at item ${invalidIndex + 1}: ${reason}`);
+            return;
+          }
           setParsedQuestions(json);
           setShowSmartPaste(true);
         } else {
-          notifyError("Invalid JSON format. Expected an array of questions.");
+          notifyError("Invalid JSON format. Expected an array of question objects.");
         }
       } catch (err) {
         console.error(err);
@@ -292,6 +321,17 @@ export default function EditAssessmentPage() {
               {showSmartPaste ? "← Manual Mode" : "✨ Smart Paste"}
             </button>
           </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-8 shadow-xl">
+          <p className="text-sm text-gray-600">
+            Upload a JSON file with an array of questions. Format:
+            <code className="text-yellow-600"> question_text</code>,
+            <code className="text-yellow-600"> question_type</code>,
+            <code className="text-yellow-600"> marks</code>,
+            <code className="text-yellow-600"> section</code>.
+            For MCQ also include <code className="text-yellow-600">options</code> and <code className="text-yellow-600">correct_answer</code>.
+          </p>
         </div>
 
         {assessment && (

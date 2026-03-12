@@ -24,13 +24,14 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./frontend/src/*"
       ]
     }
   },
   "include": [
     "next-env.d.ts",
     "app/**/*",
+    "frontend/src/**/*",
     "components/**/*",
     "pages/**/*",
     ".next/types/**/*.ts",
@@ -39,7 +40,6 @@
   "exclude": [
     "node_modules",
     "backend",
-    "frontend",
     "scripts"
   ]
 }

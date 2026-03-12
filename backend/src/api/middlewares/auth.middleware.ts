@@ -17,8 +17,12 @@ export function requireAuth(
 ) {
   let token = req.cookies.access_token;
 
+  console.log("DEBUG: Headers:", JSON.stringify(req.headers));
+  console.log("DEBUG: Cookies:", JSON.stringify(req.cookies));
+
   if (!token && req.headers.authorization?.startsWith("Bearer ")) {
     token = req.headers.authorization.split(" ")[1];
+    console.log("DEBUG: Token found in Authorization header");
   }
 
   if (!token) {

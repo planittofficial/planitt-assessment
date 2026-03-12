@@ -22,10 +22,14 @@ export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include", // ⭐ sends cookies
     headers: {
       "Content-Type": "application/json",
+      ...authHeader,
       ...(options.headers || {}),
     },
     ...options,

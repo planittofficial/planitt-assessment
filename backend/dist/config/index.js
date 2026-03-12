@@ -12,6 +12,6 @@ const config = {
     JWT_EXPIRES_IN: "4h",
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
     COOKIE_SECURE: process.env.NODE_ENV === "production",
-    CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:3000",
+    CORS_ORIGIN: process.env.CORS_ORIGIN || "https://planitt-assessment.onrender.com",
 };
 exports.default = config;

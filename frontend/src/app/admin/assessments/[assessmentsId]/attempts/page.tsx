@@ -55,7 +55,22 @@ function isScreenRecordingViolation(type: unknown) {
 
 function formatDateTime(value?: string) {
   if (!value) return "N/A";
-  return new Date(value).toLocaleString();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "N/A";
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const hours = String(parsed.getHours()).padStart(2, "0");
+  const minutes = String(parsed.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function excelText(value: string) {
+  return value === "N/A" ? value : `="${value}"`;
+}
+
+function csvField(value: string | number) {
+  return `"${String(value).replaceAll('"', '""')}"`;
 }
 
 export default function AdminAssessmentAttemptsPage() {
@@ -165,9 +180,9 @@ export default function AdminAssessmentAttemptsPage() {
         a.status,
         a.final_score ?? "0",
         a.result,
-        formatDateTime(a.started_at ?? a.start_time),
-        formatDateTime(a.submitted_at ?? a.end_time)
-      ].map(field => `"${field}"`).join(","))
+        excelText(formatDateTime(a.started_at ?? a.start_time)),
+        excelText(formatDateTime(a.submitted_at ?? a.end_time))
+      ].map(csvField).join(","))
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

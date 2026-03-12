@@ -85,8 +85,8 @@ export default function AdminPage() {
         r.assessment_title,
         r.final_score,
         r.result,
-        formatDateForUi(getBestDateValue(r))
-      ].map(field => `"${field}"`).join(","))
+        excelText(formatDateForUi(getBestDateValue(r)))
+      ].map(csvField).join(","))
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -272,7 +272,19 @@ function getBestDateValue(row: DashboardRecentResult): string | null {
 function formatDateForUi(value: string | null): string {
   if (!value) return "-";
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleDateString();
+  if (Number.isNaN(parsed.getTime())) return "-";
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function excelText(value: string): string {
+  return value === "-" ? value : `="${value}"`;
+}
+
+function csvField(value: string | number): string {
+  return `"${String(value).replaceAll('"', '""')}"`;
 }
 
 function StatCard({ title, value, color, icon }: { title: string, value: number | string | undefined, color: string, icon: string }) {

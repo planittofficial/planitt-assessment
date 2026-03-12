@@ -10,8 +10,8 @@ const config = {
     NODE_ENV: process.env.NODE_ENV || "development",
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: "4h",
-    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || ".domain.com", // change to your real domain later
+    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
     COOKIE_SECURE: process.env.NODE_ENV === "production",
-    CORS_ORIGIN: process.env.CORS_ORIGIN,
+    CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:3000",
 };
 exports.default = config;

@@ -22,6 +22,9 @@ app.use((0, cors_1.default)({
     credentials: true,
 }));
 // ---------- Routes ----------
+app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+});
 app.use("/api/auth", auth_1.default);
 app.use("/api/attempts", attempt_1.default);
 app.use("/api/violations", violation_1.default);

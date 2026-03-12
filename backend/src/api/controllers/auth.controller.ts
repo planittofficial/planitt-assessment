@@ -25,13 +25,11 @@ export async function login(req: Request, res: Response) {
     role: user.role,
   });
 
-  const isProd = config.NODE_ENV === "production";
-
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    domain: isProd ? config.COOKIE_DOMAIN : undefined,
+    secure: config.COOKIE_SECURE,
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    domain: config.COOKIE_DOMAIN,
     maxAge: 4 * 60 * 60 * 1000,
   });
 
@@ -69,13 +67,11 @@ export async function me(req: AuthRequest, res: Response) {
  * LOGOUT
  */
 export async function logout(_req: Request, res: Response) {
-  const isProd = config.NODE_ENV === "production";
-
   res.clearCookie("access_token", {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    domain: isProd ? config.COOKIE_DOMAIN : undefined,
+    secure: config.COOKIE_SECURE,
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
+    domain: config.COOKIE_DOMAIN,
   });
 
   return res.json({ message: "Logout successful" });

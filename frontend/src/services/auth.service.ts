@@ -1,7 +1,7 @@
 import { AuthLoginResponse, AuthUser } from "@/types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_API_URL || "https://planitt-assessment.onrender.com";
 
 export const authService = {
   async login(email: string): Promise<AuthLoginResponse> {

@@ -20,7 +20,17 @@ export default function NotificationHost() {
   const nextIdRef = useRef(1);
   const timeoutMapRef = useRef<Map<number, number>>(new Map());
 
+  function removeNotification(id: number) {
+    const timeoutId = timeoutMapRef.current.get(id);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+      timeoutMapRef.current.delete(id);
+    }
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }
+
   useEffect(() => {
+    const timeoutMap = timeoutMapRef.current;
     const unsubscribe = subscribeNotifications((payload: NotificationPayload) => {
       const id = nextIdRef.current++;
       const type = payload.type ?? "info";
@@ -32,24 +42,15 @@ export default function NotificationHost() {
         removeNotification(id);
       }, duration);
 
-      timeoutMapRef.current.set(id, timeoutId);
+      timeoutMap.set(id, timeoutId);
     });
 
     return () => {
       unsubscribe();
-      timeoutMapRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      timeoutMapRef.current.clear();
+      timeoutMap.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      timeoutMap.clear();
     };
   }, []);
-
-  const removeNotification = (id: number) => {
-    const timeoutId = timeoutMapRef.current.get(id);
-    if (timeoutId) {
-      window.clearTimeout(timeoutId);
-      timeoutMapRef.current.delete(id);
-    }
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-4 z-[1000] flex justify-center px-4">

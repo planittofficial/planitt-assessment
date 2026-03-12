@@ -19,7 +19,7 @@ export function useTimer(
     }, 1000);
 
     return () => clearTimeout(t);
-  }, [timeLeft]);
+  }, [onExpire, timeLeft]);
 
   return timeLeft;
 }

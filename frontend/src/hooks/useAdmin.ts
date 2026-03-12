@@ -12,7 +12,7 @@ export function useAdmin() {
     if (!loading && user?.role !== "ADMIN") {
       router.push("/login");
     }
-  }, [user, loading]);
+  }, [loading, router, user]);
 
   return { user, loading };
 }

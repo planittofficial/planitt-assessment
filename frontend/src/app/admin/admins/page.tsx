@@ -5,8 +5,16 @@ import { getAdmins, addAdmin, deleteAdmin } from "@/services/admin.service";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 
+type AdminRecord = {
+  id: string;
+  email: string;
+  full_name?: string;
+  created_at?: string;
+  createdAt?: string;
+};
+
 export default function AdminsPage() {
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");

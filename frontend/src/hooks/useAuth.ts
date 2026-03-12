@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { authService } from "@/services/auth.service";
 import { usePathname, useRouter } from "next/navigation";
+import { AuthUser } from "@/types";
 
 export function useAuth(requireAuth = false) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

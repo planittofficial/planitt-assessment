@@ -18,49 +18,52 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-900 text-lg animate-pulse">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-lg text-stone-900 animate-pulse">Loading...</p>
       </div>
     );
   }
 
-  const isMainDashboard = pathname === "/admin";
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <nav className="bg-white border-b border-gray-200 py-4 px-8 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <Link href="/admin" className="text-xl font-bold text-yellow-500">
-            Admin Panel
-          </Link>
+    <div className="app-shell min-h-screen text-stone-900">
+      <nav className="sticky top-0 z-30 border-b border-stone-200/70 bg-white/75 px-4 py-4 shadow-sm backdrop-blur sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-500">
+              Planitt Console
+            </p>
+            <Link href="/admin" className="mt-1 block text-2xl font-extrabold tracking-tight text-stone-950">
+              Admin Panel
+            </Link>
+          </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-full border border-stone-200/80 bg-white/70 p-1 shadow-sm">
               <Link 
                 href="/admin/assessments" 
-                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                   isAssessmentsRoute
-                    ? "border-yellow-300 bg-yellow-100 text-yellow-800 shadow-sm"
-                    : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-[#f9e7d2] text-[#8b5224] shadow-sm"
+                    : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                 }`}
               >
                 Assessments
               </Link>
               <Link 
                 href="/admin/candidates" 
-                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                   isCandidatesRoute
-                    ? "border-blue-300 bg-blue-100 text-blue-800 shadow-sm"
-                    : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-[#e7f2ef] text-[#24593e] shadow-sm"
+                    : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                 }`}
               >
                 Candidates
               </Link>
               <Link 
                 href="/admin/admins" 
-                className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-all ${
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                   isAdminsRoute
-                    ? "border-violet-300 bg-violet-100 text-violet-800 shadow-sm"
-                    : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-[#f2ebff] text-[#6844aa] shadow-sm"
+                    : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
                 }`}
               >
                 Admins
@@ -70,8 +73,8 @@ export default function AdminLayout({
           </div>
         </div>
       </nav>
-      <main className="p-8">
-        <div className="max-w-7xl mx-auto">
+      <main className="px-4 py-8 sm:px-8">
+        <div className="mx-auto max-w-7xl">
           {children}
         </div>
       </main>

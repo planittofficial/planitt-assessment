@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAssessment } from "@/services/admin.service";
-import Link from "next/link";
 import { notifyError } from "@/lib/notify";
 
 export default function NewAssessmentPage() {
@@ -105,4 +104,3 @@ export default function NewAssessmentPage() {
     </>
   );
 }
-

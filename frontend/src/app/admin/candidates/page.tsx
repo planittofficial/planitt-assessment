@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getCandidates, addCandidate, bulkAddCandidates, deleteCandidate, bulkDeleteCandidates } from "@/services/admin.service";
 import { Candidate } from "@/types";
-import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 
 export default function CandidatesPage() {

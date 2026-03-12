@@ -32,9 +32,9 @@ export default function StartAssessmentPage() {
 
   if (authLoading || user?.role?.toUpperCase() === "ADMIN") {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center text-stone-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-[#c77131]"></div>
           <p>Loading...</p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export default function StartAssessmentPage() {
       enterFullscreen();
       router.push(`/assessment/attempt/${res.attemptId}`);
     } catch (err: unknown) {
-      const message = String((err as any)?.message || "");
+      const message = err instanceof Error ? err.message : "";
       const attemptId =
         err instanceof ApiError ? String(err.data?.attemptId || "") : "";
 
@@ -79,58 +79,91 @@ export default function StartAssessmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4">
-      <div className="bg-zinc-900 p-8 rounded-xl border border-zinc-700 max-w-md w-full text-center shadow-2xl">
-        <h1 className="text-2xl font-bold mb-4">
-          Enter Assessment Code
-        </h1>
+    <main className="app-shell flex min-h-screen items-center justify-center px-4 py-10 text-stone-900">
+      <div className="relative z-10 grid w-full max-w-6xl gap-6 lg:grid-cols-[1fr_0.9fr]">
+        <section className="hero-card rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10">
+          <div className="brand-kicker">Candidate Journey</div>
+          <h1 className="mt-6 max-w-2xl text-4xl font-extrabold tracking-tight text-stone-950 sm:text-5xl">
+            Enter your code and move into a calmer assessment flow.
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-7 text-stone-600">
+            The system checks device compatibility, starts your timer only after a valid entry,
+            and keeps the process focused on desktop-first completion.
+          </p>
 
-        <p className="text-zinc-400 mb-6">
-          Please enter the unique code provided to you to start the assessment.
-        </p>
-
-        {isMobileDevice && (
-          <div className="bg-red-500/15 text-red-300 p-3 rounded mb-4 text-sm text-left border border-red-500/30">
-            Assessment is available only in desktop mode. Please use a desktop or laptop browser.
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              ["Secure entry", "Fullscreen begins only after the attempt starts."],
+              ["Desktop only", "Mobile and tablet devices are blocked."],
+              ["Results access", "Candidates can review published outcomes anytime."],
+            ].map(([title, copy]) => (
+              <div
+                key={title}
+                className="rounded-[1.5rem] border border-stone-200/80 bg-white/75 p-4 shadow-sm"
+              >
+                <p className="text-sm font-extrabold text-stone-900">{title}</p>
+                <p className="mt-2 text-sm leading-6 text-stone-600">{copy}</p>
+              </div>
+            ))}
           </div>
-        )}
+        </section>
 
-        {error && (
-          <div className="bg-red-500/15 text-red-300 p-3 rounded mb-4 text-sm text-left border border-red-500/30">
-            {error}
+        <section className="hero-card my-auto rounded-[2rem] p-6 text-center sm:p-8">
+          <div className="mb-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-stone-500">
+              Assessment Access
+            </p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-stone-950">
+              Enter Assessment Code
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              Use the unique code shared by your recruiter or administrator.
+            </p>
           </div>
-        )}
 
-        <input
-          type="text"
-          placeholder="Code (e.g. ABCDEF)"
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          disabled={isMobileDevice === true}
-          className="w-full p-3 rounded bg-zinc-800 border border-zinc-600 mb-6 focus:outline-none focus:border-amber-400 text-center font-mono text-xl tracking-widest text-zinc-100"
-          maxLength={10}
-        />
+          {isMobileDevice && (
+            <div className="status-note error mb-4 text-left">
+              Assessment is available only in desktop mode. Please use a desktop or laptop browser.
+            </div>
+          )}
 
-        <button
-          onClick={startAssessment}
-          disabled={loading || isMobileDevice === true || isMobileDevice === null}
-          className="w-full bg-amber-400 text-black px-6 py-3 rounded font-semibold hover:bg-amber-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Starting..." : "Start Assessment"}
-        </button>
+          {error && (
+            <div className="status-note error mb-4 text-left">
+              {error}
+            </div>
+          )}
 
-        <Link
-          href="/results"
-          className="block w-full mt-3 bg-zinc-800 text-zinc-100 px-6 py-3 rounded font-semibold border border-zinc-600 hover:bg-zinc-700 transition"
-        >
-          View Results
-        </Link>
+          <input
+            type="text"
+            placeholder="ABCDEF"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            disabled={isMobileDevice === true}
+            className="field-input mb-5 px-4 py-4 text-center font-mono text-2xl font-bold tracking-[0.35em] uppercase"
+            maxLength={10}
+          />
 
-        <p className="mt-4 text-xs text-zinc-400">
-          Once started, fullscreen mode will be enforced and the timer begins.
-        </p>
+          <button
+            onClick={startAssessment}
+            disabled={loading || isMobileDevice === true || isMobileDevice === null}
+            className="primary-button w-full px-6 py-3.5 text-base disabled:cursor-not-allowed"
+          >
+            {loading ? "Starting..." : "Start Assessment"}
+          </button>
+
+          <Link
+            href="/results"
+            className="secondary-button mt-3 flex w-full px-6 py-3.5 text-base"
+          >
+            View Results
+          </Link>
+
+          <p className="mt-5 text-xs leading-5 text-stone-500">
+            Once started, fullscreen mode will be enforced and the timer begins immediately.
+          </p>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 

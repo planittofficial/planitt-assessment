@@ -12,6 +12,7 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
+import { ApiError } from "@/lib/api";
 
 import Link from "next/link";
 
@@ -58,7 +59,7 @@ function formatDateTime(value?: string) {
 }
 
 export default function AdminAssessmentAttemptsPage() {
-  const { loading: adminLoading } = useAdmin();
+  const { user, loading: adminLoading } = useAdmin();
   const params = useParams();
 
   const rawAssessmentId = (params as Record<string, string | string[] | undefined>).assessmentsId
@@ -75,7 +76,8 @@ export default function AdminAssessmentAttemptsPage() {
   const [filter, setFilter] = useState<"ALL" | "PASS" | "FAIL">("ALL");
 
   const loadAttempts = useCallback(async () => {
-    if (!assessmentId) return;
+    const isAdmin = user?.role?.toUpperCase() === "ADMIN";
+    if (!assessmentId || adminLoading || !isAdmin) return;
     try {
       const data = await getAttemptsByAssessment(assessmentId);
       const attemptsWithViolations = await Promise.all(
@@ -98,16 +100,22 @@ export default function AdminAssessmentAttemptsPage() {
         })
       );
       setAttempts(attemptsWithViolations);
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        return;
+      }
       console.error("Failed to load attempts", err);
+      notifyError("Failed to load attempts.");
     } finally {
       setLoading(false);
     }
-  }, [assessmentId]);
+  }, [adminLoading, assessmentId, user?.role]);
 
   useEffect(() => {
-    loadAttempts();
-  }, [loadAttempts]);
+    const isAdmin = user?.role?.toUpperCase() === "ADMIN";
+    if (adminLoading || !isAdmin) return;
+    void loadAttempts();
+  }, [adminLoading, loadAttempts, user?.role]);
 
   const handlePublishAll = async () => {
     if (!assessmentId) return;

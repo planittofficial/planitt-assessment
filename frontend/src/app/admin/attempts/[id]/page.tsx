@@ -8,11 +8,26 @@ import { getDescriptiveAnswers, gradeDescriptiveAnswer, getAttemptSummary } from
 import { notifyError } from "@/lib/notify";
 import { openPromptDialog } from "@/lib/dialog";
 
+type DescriptiveAnswer = {
+  id: number;
+  question_text: string;
+  answer_text?: string;
+  answer?: string;
+  user_answer?: string;
+  marks: number;
+  is_graded?: boolean;
+  marks_obtained?: number;
+};
+
+type AttemptSummary = {
+  email?: string;
+};
+
 export default function AttemptReviewPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [answers, setAnswers] = useState<any[]>([]);
-  const [attempt, setAttempt] = useState<any>(null);
+  const [answers, setAnswers] = useState<DescriptiveAnswer[]>([]);
+  const [attempt, setAttempt] = useState<AttemptSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

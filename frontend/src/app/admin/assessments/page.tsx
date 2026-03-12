@@ -9,9 +9,10 @@ import {
 import Link from "next/link";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
+import { Assessment } from "@/types";
 
 export default function AdminAssessmentsPage() {
-  const [assessments, setAssessments] = useState<any[]>([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [publishingId, setPublishingId] = useState<string | number | null>(null);
   const [deletingAssessmentId, setDeletingAssessmentId] = useState<string | number | null>(null);
 
@@ -73,12 +74,15 @@ export default function AdminAssessmentsPage() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl">
+      <div className="hero-card max-w-6xl mx-auto rounded-[2rem] p-6 text-stone-900 shadow-xl">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Assessments</h1>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-500">Assessment Library</p>
+            <h1 className="mt-2 text-3xl font-bold text-stone-950">Assessments</h1>
+          </div>
           <Link
             href="/admin/assessments/new"
-            className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-yellow-500/10"
+            className="primary-button px-6 py-3 text-sm"
           >
             + Create Assessment
           </Link>
@@ -93,19 +97,19 @@ export default function AdminAssessmentsPage() {
           return (
           <div
             key={assessmentId || a.title}
-            className="p-4 border border-gray-200 rounded mb-4 flex justify-between bg-white"
+            className="mb-4 flex justify-between rounded-[1.5rem] border border-stone-200/80 bg-white/80 p-5 shadow-sm"
           >
             <div>
-              <p className="font-semibold text-gray-900">{a.title}</p>
+              <p className="font-semibold text-stone-900">{a.title}</p>
               <div className="flex gap-2 items-center mt-1">
-                <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200">
-                  Code: <span className="text-yellow-600 font-mono font-bold uppercase">{a.code}</span>
+                <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-600">
+                  Code: <span className="font-mono font-bold uppercase text-[#c77131]">{a.code}</span>
                 </span>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded border ${
+                  className={`rounded-full border px-3 py-1 text-xs ${
                     String(a.status).toLowerCase() === "true" || String(a.status).toUpperCase() === "ACTIVE"
-                      ? "text-emerald-700 border-emerald-200 bg-emerald-100"
-                      : "text-red-700 border-red-200 bg-red-100"
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                      : "bg-rose-100 text-rose-700 border-rose-200"
                   }`}
                 >
                   {String(a.status).toLowerCase() === "true" || String(a.status).toUpperCase() === "ACTIVE"
@@ -119,34 +123,34 @@ export default function AdminAssessmentsPage() {
               <button
                 onClick={() => handlePublishAll(assessmentId)}
                 disabled={!hasAssessmentId || publishingId === assessmentId}
-                className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-sm font-semibold text-yellow-700 transition-all hover:bg-yellow-100 disabled:opacity-50"
+                className="secondary-button rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 disabled:opacity-50"
               >
                 {publishingId === assessmentId ? "Publishing..." : "Publish Results"}
               </button>
               {hasAssessmentId ? (
                 <Link
                   href={`/admin/assessments/${assessmentId}/edit`}
-                  className="rounded-lg border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-900 transition-all hover:bg-gray-200"
+                  className="secondary-button rounded-xl px-3 py-2 text-sm"
                 >
                   Manage Questions
                 </Link>
               ) : (
-                <span className="rounded-lg border border-gray-200 bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-500">Manage Questions</span>
+                <span className="rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-500">Manage Questions</span>
               )}
               {hasAssessmentId ? (
                 <Link
                   href={`/admin/assessments/${assessmentId}/attempts`}
-                  className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-sm font-semibold text-yellow-700 transition-all hover:bg-yellow-100"
+                  className="secondary-button rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
                 >
                   View Attempts -&gt;
                 </Link>
               ) : (
-                <span className="rounded-lg border border-gray-200 bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-500">View Attempts</span>
+                <span className="rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-500">View Attempts</span>
               )}
               <button
                 onClick={() => handleDeleteAssessment(assessmentId)}
                 disabled={!hasAssessmentId || deletingAssessmentId === assessmentId}
-                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition-all hover:bg-rose-100 disabled:opacity-50"
               >
                 {deletingAssessmentId === assessmentId ? "Deleting..." : "Delete Assessment"}
               </button>

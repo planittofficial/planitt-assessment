@@ -26,6 +26,20 @@ export type Candidate = {
   phone?: string;
 };
 
+export type AuthUser = {
+  id?: string;
+  userId?: string;
+  full_name?: string;
+  email: string;
+  role: "ADMIN" | "CANDIDATE" | string;
+};
+
+export type AuthLoginResponse = {
+  role: AuthUser["role"];
+  email?: string;
+  full_name?: string;
+};
+
 export type Attempt = {
   id: string;
   user_id: string;

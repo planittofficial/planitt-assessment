@@ -5,10 +5,38 @@ import { useParams, useRouter } from "next/navigation";
 import { getAttemptDetails } from "@/services/admin.service";
 import Link from "next/link";
 
+type AttemptResultAnswer = {
+  answer_id: string | number;
+  question_text: string;
+  marks_obtained: number;
+  max_marks: number;
+  question_type: "MCQ" | "DESCRIPTIVE" | string;
+  user_answer?: string;
+  correct_answer?: string;
+  is_graded?: boolean;
+};
+
+type AttemptResultSummary = {
+  started_at?: string;
+  start_time?: string;
+  submitted_at?: string;
+  end_time?: string;
+  result?: "PASS" | "FAIL" | string;
+  assessment_title: string;
+  email: string;
+  final_score: number;
+  total_marks: number;
+};
+
+type AttemptResultData = {
+  attempt: AttemptResultSummary;
+  answers: AttemptResultAnswer[];
+};
+
 export default function AttemptResultsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AttemptResultData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
@@ -132,7 +160,7 @@ export default function AttemptResultsPage() {
         </h2>
 
         <div className="space-y-4">
-          {answers.map((ans: any, index: number) => (
+          {answers.map((ans, index: number) => (
             <div
               key={ans.answer_id}
               className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300"

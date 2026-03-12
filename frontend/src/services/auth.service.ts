@@ -1,8 +1,10 @@
+import { AuthLoginResponse, AuthUser } from "@/types";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export const authService = {
-  async login(email: string) {
+  async login(email: string): Promise<AuthLoginResponse> {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       credentials: "include",
@@ -17,16 +19,16 @@ export const authService = {
       throw new Error(data.message || "Login failed");
     }
 
-    return res.json();
+    return res.json() as Promise<AuthLoginResponse>;
   },
 
-  async me() {
+  async me(): Promise<AuthUser> {
     const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
       credentials: "include",
     });
 
     if (!res.ok) throw new Error("Unauthorized");
-    return res.json();
+    return res.json() as Promise<AuthUser>;
   },
 
   async logout() {

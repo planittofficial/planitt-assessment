@@ -1,5 +1,4 @@
 import { ApiError, apiFetch } from "@/lib/api";
-import { Question } from "@/types";
 
 export const getAssessments = () => {
   return apiFetch("/api/admin/assessments");
@@ -53,7 +52,7 @@ export const deleteAttempt = async (
   attemptId: string | number,
   assessmentId?: string | number
 ) => {
-  const requests: Array<() => Promise<any>> = [
+  const requests: Array<() => Promise<unknown>> = [
     () =>
       apiFetch(`/api/admin/attempts/${attemptId}`, {
         method: "DELETE",
@@ -103,7 +102,7 @@ export const deleteAllAttemptsByAssessment = async (
   assessmentId: string | number,
   attemptIds: Array<string | number> = []
 ) => {
-  const requests: Array<() => Promise<any>> = [
+  const requests: Array<() => Promise<unknown>> = [
     () =>
       apiFetch(`/api/admin/assessments/${assessmentId}/attempts`, {
         method: "DELETE",
@@ -142,7 +141,7 @@ export const deleteAllAttemptsByAssessment = async (
 };
 
 export const deleteAssessment = async (assessmentId: string | number) => {
-  const requests: Array<() => Promise<any>> = [
+  const requests: Array<() => Promise<unknown>> = [
     () =>
       apiFetch(`/api/admin/assessments/${assessmentId}`, {
         method: "DELETE",

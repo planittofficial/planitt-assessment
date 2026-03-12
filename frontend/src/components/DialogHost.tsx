@@ -18,11 +18,8 @@ export default function DialogHost() {
 
   useEffect(() => {
     if (!active) return;
-    if (active.kind === "prompt") {
-      setInputValue(active.defaultValue ?? "");
-    } else {
-      setInputValue("");
-    }
+    const nextValue = active.kind === "prompt" ? active.defaultValue ?? "" : "";
+    queueMicrotask(() => setInputValue(nextValue));
   }, [active]);
 
   const labels = useMemo(() => {

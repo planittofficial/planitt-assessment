@@ -9,6 +9,8 @@ import { notifyError, notifyInfo } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 import { isMobileOrTabletDevice } from "@/lib/device";
 
+const SECTIONS = ["Quantitative", "Verbal", "Coding", "Logical"] as const;
+
 export default function AttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
   const router = useRouter();
@@ -21,7 +23,9 @@ export default function AttemptPage() {
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes in seconds
   const [selectedSection, setSelectedSection] = useState<string>("Quantitative"); // Quantitative first by default
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(
+    typeof window === "undefined" ? true : window.navigator.onLine
+  );
   const [showReconnectedBanner, setShowReconnectedBanner] = useState(false);
   const [isRetryingFailedAnswers, setIsRetryingFailedAnswers] = useState(false);
   const [failedAnswers, setFailedAnswers] = useState<Record<string, string>>({});
@@ -32,8 +36,6 @@ export default function AttemptPage() {
     requireFullscreen,
     requestAssessmentFullscreen,
   } = useViolation(id, isMobileDevice === false);
-
-  const sections = ["Quantitative", "Verbal", "Coding", "Logical"];
 
   const handleSubmit = useCallback(async (isAuto = false) => {
     if (submittedScore !== null) return;
@@ -79,8 +81,14 @@ export default function AttemptPage() {
     return () => window.clearTimeout(timerId);
   }, []);
 
-  const filteredQuestions = questions.filter(q => q.section === selectedSection);
-  const sectionStats = sections.map((section) => {
+  const activeSection =
+    questions.length > 0 && !questions.some((q) => q.section === selectedSection)
+      ? (SECTIONS.find((section) => questions.some((q) => q.section === section)) ?? selectedSection)
+      : selectedSection;
+  const filteredQuestions = questions.filter((q) => q.section === activeSection);
+  const visibleCurrentIndex =
+    filteredQuestions.length > 0 && currentIndex >= filteredQuestions.length ? 0 : currentIndex;
+  const sectionStats = SECTIONS.map((section) => {
     const sectionQuestions = questions.filter((q) => q.section === section);
     const answered = sectionQuestions.filter((q) => {
       const value = answers[q.id];
@@ -98,33 +106,14 @@ export default function AttemptPage() {
   const totalAnswered = sectionStats.reduce((sum, item) => sum + item.answered, 0);
   const totalUnanswered = totalQuestions - totalAnswered;
   const failedAnswerCount = Object.keys(failedAnswers).length;
-  const sectionIndex = sections.indexOf(selectedSection);
+  const sectionIndex = SECTIONS.indexOf(activeSection as (typeof SECTIONS)[number]);
   const nextSection =
-    sectionIndex >= 0 && sectionIndex < sections.length - 1
-      ? sections[sectionIndex + 1]
+    sectionIndex >= 0 && sectionIndex < SECTIONS.length - 1
+      ? SECTIONS[sectionIndex + 1]
       : null;
   const isLastQuestionInSection =
-    filteredQuestions.length > 0 && currentIndex === filteredQuestions.length - 1;
+    filteredQuestions.length > 0 && visibleCurrentIndex === filteredQuestions.length - 1;
   const isSectionBoundary = filteredQuestions.length === 0 || isLastQuestionInSection;
-
-  useEffect(() => {
-    const hasQuestionsInSelectedSection = questions.some((q) => q.section === selectedSection);
-    if (questions.length > 0 && !hasQuestionsInSelectedSection) {
-      const firstSectionWithQuestions = sections.find((section) =>
-        questions.some((q) => q.section === section)
-      );
-      if (firstSectionWithQuestions) {
-        setSelectedSection(firstSectionWithQuestions);
-        setCurrentIndex(0);
-      }
-    }
-  }, [questions, selectedSection]);
-
-  useEffect(() => {
-    if (currentIndex >= filteredQuestions.length && filteredQuestions.length > 0) {
-      setCurrentIndex(0);
-    }
-  }, [filteredQuestions.length, currentIndex]);
 
   const retryFailedAnswers = useCallback(async () => {
     if (submittedScore !== null) return;
@@ -155,8 +144,6 @@ export default function AttemptPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    setIsOnline(window.navigator.onLine);
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -221,14 +208,14 @@ export default function AttemptPage() {
   }
 
   const handleNextQuestion = () => {
-    if (currentIndex < filteredQuestions.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+    if (visibleCurrentIndex < filteredQuestions.length - 1) {
+      setCurrentIndex(visibleCurrentIndex + 1);
     }
   };
 
   const handlePrevQuestion = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+    if (visibleCurrentIndex > 0) {
+      setCurrentIndex(visibleCurrentIndex - 1);
     }
   };
 
@@ -240,7 +227,7 @@ export default function AttemptPage() {
 
   if (isMobileDevice === null) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center text-stone-900">
         <p className="animate-pulse">Checking device compatibility...</p>
       </div>
     );
@@ -248,16 +235,16 @@ export default function AttemptPage() {
 
   if (isMobileDevice) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
-        <div className="max-w-xl w-full bg-zinc-900 border border-zinc-700 rounded-2xl p-8 text-center shadow-2xl">
+      <div className="app-shell flex min-h-screen items-center justify-center p-6 text-stone-900">
+        <div className="hero-card max-w-xl w-full rounded-[2rem] p-8 text-center">
           <h1 className="text-3xl font-bold mb-3">Desktop Mode Required</h1>
-          <p className="text-zinc-300 mb-6">
+          <p className="mb-6 text-stone-600">
             This assessment cannot be taken on mobile or tablet devices.
             Please open it on a desktop or laptop browser.
           </p>
           <button
             onClick={() => router.push("/assessment/start")}
-            className="bg-amber-400 text-black px-6 py-3 rounded-xl font-bold hover:bg-amber-300 transition"
+            className="primary-button px-6 py-3"
           >
             Back to Start
           </button>
@@ -270,28 +257,28 @@ export default function AttemptPage() {
     // ... success UI
     // ... (Keep existing success UI)
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-zinc-900 p-8 rounded-xl border border-zinc-700 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-amber-400/15 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="app-shell flex min-h-screen items-center justify-center p-6 text-stone-900">
+        <div className="hero-card max-w-md w-full rounded-[2rem] p-8 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
+            <svg className="h-10 w-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h1 className="text-3xl font-bold mb-2">Assessment Submitted!</h1>
-          <p className="text-zinc-400 mb-8">Your responses have been recorded successfully.</p>
+          <p className="mb-8 text-stone-600">Your responses have been recorded successfully.</p>
           
-          <div className="bg-zinc-800/60 rounded-lg p-6 mb-8 border border-zinc-600">
-            <p className="text-sm text-zinc-400 uppercase font-bold tracking-widest mb-1">Your Score</p>
-            <p className="text-5xl font-black text-amber-400">{submittedScore}</p>
+          <div className="mb-8 rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-6">
+            <p className="mb-1 text-sm font-bold uppercase tracking-widest text-stone-500">Your Score</p>
+            <p className="text-5xl font-black text-[#c77131]">{submittedScore}</p>
           </div>
 
-          <p className="text-sm text-zinc-400 mb-8 italic">
+          <p className="mb-8 text-sm italic text-stone-500">
             Note: Your final result (Pass/Fail) will be available once published by the administrator.
           </p>
 
           <button
             onClick={() => router.push("/results")}
-            className="w-full bg-amber-400 text-black py-4 rounded-xl font-bold hover:bg-amber-300 transition-colors"
+            className="primary-button w-full py-4"
           >
             Go to My Results
           </button>
@@ -302,25 +289,25 @@ export default function AttemptPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center text-stone-900">
         <p className="animate-pulse">Loading questions...</p>
       </div>
     );
   }
 
-  const currentQuestion = filteredQuestions[currentIndex];
+  const currentQuestion = filteredQuestions[visibleCurrentIndex];
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <div className="app-shell min-h-screen px-4 py-6 text-stone-900 sm:px-6">
       {(!isOnline || isRetryingFailedAnswers || showReconnectedBanner) && (
-        <div className={`sticky top-2 z-50 mb-4 rounded-xl border px-4 py-3 text-sm ${
+        <div className={`sticky top-2 z-50 mb-4 rounded-2xl border px-4 py-3 text-sm backdrop-blur ${
           !isOnline
-            ? "bg-red-500/10 border-red-500/40 text-red-200"
+            ? "bg-red-50/90 border-red-200 text-red-700"
             : isRetryingFailedAnswers
-              ? "bg-amber-500/10 border-amber-500/40 text-amber-100"
-              : "bg-emerald-500/10 border-emerald-500/40 text-emerald-200"
+              ? "bg-amber-50/90 border-amber-200 text-amber-800"
+              : "bg-emerald-50/90 border-emerald-200 text-emerald-700"
         }`}>
           {!isOnline && "Connection unstable: answers are stored locally and will sync once you are back online."}
           {isRetryingFailedAnswers && "Connection restored. Syncing pending answers..."}
@@ -329,19 +316,19 @@ export default function AttemptPage() {
       )}
 
       {requireFullscreen && (
-        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-zinc-900 border border-zinc-600 rounded-2xl p-6 text-center shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="hero-card w-full max-w-md rounded-[2rem] p-6 text-center">
             <h2 className="text-xl font-bold mb-2">Fullscreen Required</h2>
-            <p className="text-sm text-zinc-300 mb-6">
+            <p className="mb-6 text-sm text-stone-600">
               You exited fullscreen mode. To continue the assessment, re-enter fullscreen.
             </p>
             <button
               onClick={requestAssessmentFullscreen}
-              className="w-full bg-amber-400 text-black py-3 rounded-xl font-bold hover:bg-amber-300 transition-all"
+              className="primary-button w-full py-3"
             >
               Go Fullscreen
             </button>
-            <p className="text-xs text-zinc-400 mt-3">
+            <p className="mt-3 text-xs text-stone-500">
               This popup will close only after fullscreen is enabled.
             </p>
           </div>
@@ -358,68 +345,68 @@ export default function AttemptPage() {
                   setSelectedSection(sectionInfo.section);
                   setCurrentIndex(0);
                 }}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap border text-left ${
-                  selectedSection === sectionInfo.section
-                    ? "bg-amber-400 text-black border-amber-400"
-                    : "bg-zinc-900 text-zinc-300 border-zinc-700 hover:border-zinc-500"
+                className={`px-4 py-2 rounded-2xl text-sm font-bold transition-all whitespace-nowrap border text-left ${
+                  activeSection === sectionInfo.section
+                    ? "bg-[#f9e7d2] text-[#8b5224] border-amber-200 shadow-sm"
+                    : "bg-white/75 text-stone-700 border-stone-200 hover:border-stone-300"
                 }`}
               >
                 <p>{sectionInfo.section}</p>
-                <p className={`text-[11px] ${selectedSection === sectionInfo.section ? "text-black/80" : "text-zinc-400"}`}>
+                <p className={`text-[11px] ${activeSection === sectionInfo.section ? "text-[#8b5224]/75" : "text-stone-500"}`}>
                   {sectionInfo.answered}/{sectionInfo.total} answered
                 </p>
               </button>
             ))}
           </div>
 
-          <div className="mb-6 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <p className="text-zinc-300">
-              Progress: <span className="font-bold text-amber-300">{totalAnswered}</span> / {totalQuestions} answered
+          <div className="hero-card mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-[1.5rem] px-4 py-3 text-sm">
+            <p className="text-stone-700">
+              Progress: <span className="font-bold text-[#c77131]">{totalAnswered}</span> / {totalQuestions} answered
             </p>
-            <p className="text-zinc-300">
-              Unanswered: <span className="font-bold text-red-300">{totalUnanswered}</span>
+            <p className="text-stone-700">
+              Unanswered: <span className="font-bold text-rose-600">{totalUnanswered}</span>
             </p>
             {failedAnswerCount > 0 && (
-              <p className="text-zinc-300">
-                Pending Sync: <span className="font-bold text-amber-200">{failedAnswerCount}</span>
+              <p className="text-stone-700">
+                Pending Sync: <span className="font-bold text-amber-700">{failedAnswerCount}</span>
               </p>
             )}
           </div>
 
-          <div className="flex justify-between items-center mb-8 bg-zinc-900 p-4 rounded-xl border border-zinc-700">
+          <div className="hero-card mb-8 flex items-center justify-between rounded-[1.5rem] p-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 bg-amber-400/15 text-amber-300 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-400/30">
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
                   {currentQuestion?.section}
                 </span>
-                <h1 className="text-xl font-bold">Question {currentIndex + 1} of {filteredQuestions.length}</h1>
-                <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${
+                <h1 className="text-xl font-bold">Question {visibleCurrentIndex + 1} of {filteredQuestions.length}</h1>
+                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                   violationCount >= 2
-                    ? "bg-red-500/15 text-red-300 border-red-500/30"
-                    : "bg-zinc-800 text-zinc-300 border-zinc-600"
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : "bg-stone-100 text-stone-600 border-stone-200"
                 }`}>
                   Violations: {violationCount}/3
                 </span>
               </div>
-              <div className="w-full bg-zinc-700 h-1 mt-2 rounded-full overflow-hidden">
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-stone-200">
                 <div 
-                  className="bg-amber-400 h-full transition-all duration-1000" 
+                  className="h-full bg-[#c77131] transition-all duration-1000" 
                   style={{ width: `${(timeLeft / (60 * 60)) * 100}%` }}
                 ></div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-zinc-400 uppercase font-bold tracking-widest">Overall Time Remaining</p>
-              <p className={`text-2xl font-black ${timeLeft <= 300 ? 'text-red-300 animate-pulse' : 'text-amber-300'}`}>
+              <p className="text-xs font-bold uppercase tracking-widest text-stone-500">Overall Time Remaining</p>
+              <p className={`text-2xl font-black ${timeLeft <= 300 ? 'text-rose-600 animate-pulse' : 'text-[#c77131]'}`}>
                 {minutes}:{seconds.toString().padStart(2, "0")}
               </p>
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 mb-8 shadow-xl min-h-[400px]">
+          <div className="hero-card mb-8 min-h-[400px] rounded-[1.75rem] p-8 shadow-xl">
             {currentQuestion ? (
               <>
-                <p className="text-xl font-medium mb-8 leading-relaxed">
+                <p className="mb-8 text-xl font-medium leading-relaxed text-stone-900">
                   {currentQuestion.question_text}
                 </p>
 
@@ -428,10 +415,10 @@ export default function AttemptPage() {
                     {currentQuestion.options?.map((opt) => (
                       <label 
                         key={opt.id} 
-                        className={`flex items-center p-4 rounded-xl border transition-all cursor-pointer ${
+                        className={`flex cursor-pointer items-center rounded-2xl border p-4 transition-all ${
                           answers[currentQuestion.id] === opt.id 
-                          ? 'bg-amber-400/10 border-amber-400 text-amber-300' 
-                          : 'bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-200'
+                          ? 'bg-amber-50 border-amber-300 text-amber-800 shadow-sm' 
+                          : 'bg-white/80 border-stone-200 hover:border-stone-300 text-stone-700'
                         }`}
                       >
                         <input
@@ -441,10 +428,10 @@ export default function AttemptPage() {
                           onChange={() => saveAnswer(currentQuestion.id, opt.id)}
                           className="hidden"
                         />
-                        <div className={`w-5 h-5 rounded-full border-2 mr-4 flex items-center justify-center ${
-                          answers[currentQuestion.id] === opt.id ? 'border-amber-400' : 'border-zinc-500'
+                        <div className={`mr-4 flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+                          answers[currentQuestion.id] === opt.id ? 'border-amber-500' : 'border-stone-400'
                         }`}>
-                          {answers[currentQuestion.id] === opt.id && <div className="w-2.5 h-2.5 bg-amber-400 rounded-full"></div>}
+                          {answers[currentQuestion.id] === opt.id && <div className="h-2.5 w-2.5 rounded-full bg-amber-500"></div>}
                         </div>
                         {opt.text}
                       </label>
@@ -452,7 +439,7 @@ export default function AttemptPage() {
                   </div>
                 ) : (
                   <textarea
-                    className="w-full p-4 bg-zinc-800 border border-zinc-700 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none transition-all text-zinc-100"
+                    className="field-input min-h-[180px] p-4"
                     rows={6}
                     placeholder="Type your answer here..."
                     value={answers[currentQuestion.id] || ""}
@@ -464,7 +451,7 @@ export default function AttemptPage() {
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-zinc-400 italic">
+              <div className="flex h-full items-center justify-center italic text-stone-500">
                 No questions in this section.
               </div>
             )}
@@ -473,8 +460,8 @@ export default function AttemptPage() {
           <div className="flex justify-between items-center">
             <button
               onClick={handlePrevQuestion}
-              disabled={currentIndex === 0}
-              className="bg-zinc-800 text-zinc-100 px-8 py-3 rounded-xl font-bold border border-zinc-600 hover:bg-zinc-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={visibleCurrentIndex === 0}
+              className="secondary-button px-8 py-3 disabled:cursor-not-allowed disabled:opacity-30"
             >
               ← Previous
             </button>
@@ -483,14 +470,14 @@ export default function AttemptPage() {
                 nextSection ? (
                   <button
                     onClick={handleNextSection}
-                    className="bg-amber-300 text-black px-10 py-3 rounded-xl font-bold hover:bg-amber-200 transition-all shadow-lg"
+                    className="primary-button px-10 py-3"
                   >
                     Next Section -&gt;
                   </button>
                 ) : (
                   <button
                     onClick={() => setIsReviewOpen(true)}
-                    className="bg-emerald-500 text-black px-10 py-3 rounded-xl font-bold hover:bg-emerald-400 transition-all shadow-lg"
+                    className="rounded-2xl bg-emerald-600 px-10 py-3 font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:bg-emerald-500"
                   >
                     Review & Submit
                   </button>
@@ -498,7 +485,7 @@ export default function AttemptPage() {
               ) : (
                 <button
                   onClick={handleNextQuestion}
-                  className="bg-amber-400 text-black px-10 py-3 rounded-xl font-bold hover:bg-amber-300 transition-all shadow-lg"
+                  className="primary-button px-10 py-3"
                 >
                   Next Question -&gt;
                 </button>
@@ -508,19 +495,19 @@ export default function AttemptPage() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 shadow-xl sticky top-6">
-            <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-4">Question Palette</h3>
+          <div className="hero-card sticky top-6 rounded-[1.75rem] p-6 shadow-xl">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stone-500">Question Palette</h3>
             <div className="grid grid-cols-4 gap-2 mb-8">
               {filteredQuestions.map((q, idx) => (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`w-full aspect-square rounded-lg flex items-center justify-center text-sm font-bold transition-all border ${
-                    currentIndex === idx
-                      ? 'bg-amber-400 text-black border-amber-400'
+                  className={`aspect-square w-full rounded-xl border text-sm font-bold transition-all ${
+                      visibleCurrentIndex === idx
+                      ? 'bg-[#e39a52] text-white border-[#e39a52]'
                       : answers[q.id]
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                        : 'bg-zinc-800 text-zinc-300 border-zinc-600 hover:border-zinc-500'
+                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        : 'bg-white/80 text-stone-700 border-stone-200 hover:border-stone-300'
                   }`}
                 >
                   {idx + 1}
@@ -529,23 +516,23 @@ export default function AttemptPage() {
             </div>
             
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <div className="w-3 h-3 bg-emerald-500/20 border border-emerald-500/30 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <div className="h-3 w-3 rounded border border-emerald-200 bg-emerald-100"></div>
                 <span>Answered</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <div className="w-3 h-3 bg-zinc-800 border border-zinc-600 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <div className="h-3 w-3 rounded border border-stone-200 bg-white"></div>
                 <span>Not Answered</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <div className="w-3 h-3 bg-amber-400 rounded"></div>
+              <div className="flex items-center gap-2 text-xs text-stone-500">
+                <div className="h-3 w-3 rounded bg-[#e39a52]"></div>
                 <span>Current</span>
               </div>
             </div>
 
             <button
               onClick={() => setIsReviewOpen(true)}
-              className="w-full mt-8 bg-zinc-800 text-zinc-100 py-3 rounded-xl text-sm font-bold border border-zinc-600 hover:bg-red-700 hover:border-red-500 transition-all"
+              className="secondary-button mt-8 w-full py-3 text-sm hover:bg-rose-50 hover:text-rose-700"
             >
               Review Before Submit
             </button>
@@ -554,18 +541,18 @@ export default function AttemptPage() {
       </div>
 
       {isReviewOpen && (
-        <div className="fixed inset-0 z-[120] bg-black/70 p-4 overflow-y-auto">
-          <div className="max-w-4xl mx-auto bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl">
-            <div className="flex items-start justify-between gap-4 p-6 border-b border-zinc-700">
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/45 p-4 backdrop-blur-sm">
+          <div className="hero-card mx-auto max-w-4xl rounded-[2rem] shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-stone-200 p-6">
               <div>
                 <h2 className="text-2xl font-bold">Review Before Submit</h2>
-                <p className="text-sm text-zinc-400 mt-1">
-                  Unanswered: <span className="text-red-300 font-semibold">{totalUnanswered}</span> of {totalQuestions}
+                <p className="mt-1 text-sm text-stone-500">
+                  Unanswered: <span className="font-semibold text-rose-600">{totalUnanswered}</span> of {totalQuestions}
                 </p>
               </div>
               <button
                 onClick={() => setIsReviewOpen(false)}
-                className="px-3 py-2 rounded-lg border border-zinc-600 text-zinc-200 hover:bg-zinc-800 transition-colors"
+                className="secondary-button px-3 py-2 text-sm"
               >
                 Close
               </button>
@@ -575,10 +562,10 @@ export default function AttemptPage() {
               {sectionStats
                 .filter((item) => item.total > 0)
                 .map((item) => (
-                  <div key={item.section} className="bg-zinc-950/60 border border-zinc-700 rounded-xl p-4">
+                  <div key={item.section} className="rounded-[1.5rem] border border-stone-200 bg-stone-50/70 p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-zinc-100">{item.section}</h3>
-                      <p className="text-xs text-zinc-400">
+                      <h3 className="font-bold text-stone-900">{item.section}</h3>
+                      <p className="text-xs text-stone-500">
                         {item.answered}/{item.total} answered, {item.unanswered} unanswered
                       </p>
                     </div>
@@ -590,10 +577,10 @@ export default function AttemptPage() {
                           <button
                             key={q.id}
                             onClick={() => jumpToQuestion(q.id)}
-                            className={`px-3 py-2 rounded-lg border text-sm font-bold transition-colors ${
+                            className={`rounded-xl border px-3 py-2 text-sm font-bold transition-colors ${
                               answered
-                                ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-200 hover:bg-emerald-500/25"
-                                : "bg-zinc-800 border-zinc-600 text-zinc-200 hover:border-zinc-400"
+                                ? "bg-emerald-100 border-emerald-200 text-emerald-700 hover:bg-emerald-200"
+                                : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
                             }`}
                             title={q.question_text}
                           >
@@ -606,10 +593,10 @@ export default function AttemptPage() {
                 ))}
             </div>
 
-            <div className="p-6 border-t border-zinc-700 flex flex-wrap items-center justify-end gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-stone-200 p-6">
               <button
                 onClick={() => setIsReviewOpen(false)}
-                className="px-5 py-3 rounded-xl border border-zinc-600 bg-zinc-800 hover:bg-zinc-700 transition-colors font-bold"
+                className="secondary-button px-5 py-3"
               >
                 Continue Attempt
               </button>
@@ -627,7 +614,7 @@ export default function AttemptPage() {
                     handleSubmit();
                   }
                 }}
-                className="px-6 py-3 rounded-xl bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-colors"
+                className="rounded-2xl bg-emerald-600 px-6 py-3 font-bold text-white transition-colors hover:bg-emerald-500"
               >
                 Submit Assessment
               </button>

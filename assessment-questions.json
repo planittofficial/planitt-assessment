@@ -1,0 +1,482 @@
+﻿[
+  {
+    "question_text": "What is 25 + 17?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "42",
+    "options": ["40", "41", "42", "43"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If x = 8, what is 3x - 4?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "20",
+    "options": ["18", "20", "22", "24"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "What is 15% of 200?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "30",
+    "options": ["20", "25", "30", "35"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "A train travels 120 km in 3 hours. What is its speed?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "40 km/h",
+    "options": ["30 km/h", "40 km/h", "50 km/h", "60 km/h"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If the ratio of boys to girls is 3:2 and there are 30 boys, how many girls are there?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "20",
+    "options": ["15", "20", "25", "30"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "What is the average of 6, 10, 14, and 18?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "12",
+    "options": ["10", "11", "12", "13"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "A shop gives a 10% discount on a $500 item. What is the selling price?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "$450",
+    "options": ["$450", "$460", "$470", "$480"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "Solve: 7 + 3 * 4 = ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "19",
+    "options": ["19", "28", "40", "12"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If a rectangle has length 12 and width 5, what is its area?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "60",
+    "options": ["17", "60", "34", "24"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "What is the next number in the sequence: 5, 10, 20, 40, ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "80",
+    "options": ["60", "70", "80", "90"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If 4 notebooks cost $28, what is the cost of 7 notebooks at the same rate?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "$49",
+    "options": ["$42", "$49", "$56", "$63"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "What is 3/4 expressed as a percentage?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "75%",
+    "options": ["70%", "75%", "80%", "85%"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If the perimeter of a square is 36, what is the length of one side?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "9",
+    "options": ["6", "8", "9", "12"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "A car travels 150 km in 2.5 hours. What is its average speed?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "60 km/h",
+    "options": ["50 km/h", "60 km/h", "70 km/h", "80 km/h"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "If 2x + 6 = 20, what is x?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "7",
+    "options": ["6", "7", "8", "9"],
+    "section": "Quantitative"
+  },
+  {
+    "question_text": "Choose the correctly spelled word.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Necessary",
+    "options": ["Necesary", "Necessary", "Neccessary", "Neccesary"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Select the sentence with correct grammar.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "She has finished her homework.",
+    "options": ["She have finished her homework.", "She has finished her homework.", "She finished her homework already now.", "She is finish her homework."],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "What is the synonym of 'brief'?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Short",
+    "options": ["Short", "Late", "Wide", "Slow"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the correct meaning of the idiom 'once in a blue moon'.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Very rarely",
+    "options": ["Very often", "Very rarely", "Every day", "At night"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Pick the word that is opposite in meaning to 'generous'.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Stingy",
+    "options": ["Kind", "Stingy", "Helpful", "Cheerful"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the correctly punctuated sentence.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "After the meeting, we left the office.",
+    "options": ["After the meeting we left the office.", "After the meeting, we left the office.", "After the meeting we left, the office.", "After the meeting, we left, the office."],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Which word best completes the sentence: The report was ___ than expected.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "shorter",
+    "options": ["shorter", "short", "shortest", "shortly"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the correct plural form of 'analysis'.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "analyses",
+    "options": ["analysis", "analysises", "analyses", "analysens"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Identify the part of speech of the word 'quickly' in the sentence: She quickly finished the task.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Adverb",
+    "options": ["Noun", "Verb", "Adjective", "Adverb"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the correct word: He is good ___ math.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "at",
+    "options": ["in", "at", "on", "with"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Which sentence is in the passive voice?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "The cake was baked by Sara.",
+    "options": ["Sara baked the cake.", "The cake was baked by Sara.", "Sara is baking the cake.", "Sara will bake the cake."],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the correct spelling.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Occurrence",
+    "options": ["Occurence", "Occurrence", "Occurance", "Ocurrence"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Select the word that best fits: Please ___ the form before submitting.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "complete",
+    "options": ["complete", "completed", "completing", "completion"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "What is the antonym of 'expand'?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "contract",
+    "options": ["extend", "contract", "increase", "enlarge"],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "Choose the sentence with correct subject-verb agreement.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Each of the players is ready.",
+    "options": ["Each of the players are ready.", "Each of the players is ready.", "Each of the players were ready.", "Each of the players be ready."],
+    "section": "Verbal"
+  },
+  {
+    "question_text": "What is the output of this JavaScript code: console.log(typeof null)?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "object",
+    "options": ["null", "object", "undefined", "number"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which data structure uses LIFO order?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Stack",
+    "options": ["Queue", "Stack", "Tree", "Graph"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "What is the time complexity of linear search in an unsorted array?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "O(n)",
+    "options": ["O(1)", "O(log n)", "O(n)", "O(n log n)"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which keyword is used to define a constant in JavaScript?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "const",
+    "options": ["var", "let", "const", "static"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "In SQL, which command is used to retrieve data from a table?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "SELECT",
+    "options": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which of the following is a valid HTML tag for a hyperlink?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "<a>",
+    "options": ["<link>", "<a>", "<href>", "<url>"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "What does API stand for?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Application Programming Interface",
+    "options": ["Applied Program Interface", "Application Programming Interface", "Application Program Interaction", "Applied Programming Interaction"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which symbol is used for single-line comments in Python?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "#",
+    "options": ["//", "#", "<!--", "/*"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "In Git, which command creates a new branch and switches to it?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "git checkout -b",
+    "options": ["git branch", "git checkout -b", "git merge", "git switch --delete"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which HTTP status code indicates 'Not Found'?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "404",
+    "options": ["200", "301", "404", "500"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "What is the correct file extension for a TypeScript file?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": ".ts",
+    "options": [".js", ".ts", ".tsx", ".json"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which array method returns a new array with elements that pass a test?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "filter",
+    "options": ["map", "filter", "reduce", "forEach"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which of these is a NoSQL database?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "MongoDB",
+    "options": ["MySQL", "PostgreSQL", "MongoDB", "SQLite"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "What does CSS stand for?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Cascading Style Sheets",
+    "options": ["Color Style Sheets", "Cascading Style Sheets", "Creative Style System", "Computer Style Sheets"],
+    "section": "Coding"
+  },
+  {
+    "question_text": "Which operator is used for strict equality in JavaScript?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "===",
+    "options": ["==", "=", "===", "!="],
+    "section": "Coding"
+  },
+  {
+    "question_text": "If all A are B and all B are C, which statement must be true?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "All A are C",
+    "options": ["All A are C", "All C are A", "Some C are A", "No C are A"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Find the odd one out: Square, Triangle, Rectangle, Circle",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Circle",
+    "options": ["Square", "Triangle", "Rectangle", "Circle"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which number comes next in the series: 3, 6, 9, 12, ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "15",
+    "options": ["13", "14", "15", "16"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "If today is Wednesday, what day will it be after 10 days?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Saturday",
+    "options": ["Friday", "Saturday", "Sunday", "Monday"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which word does not belong: Apple, Banana, Carrot, Mango",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Carrot",
+    "options": ["Apple", "Banana", "Carrot", "Mango"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "A is taller than B. B is taller than C. Who is the shortest?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "C",
+    "options": ["A", "B", "C", "Cannot be determined"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Find the missing letter: A, C, E, G, ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "I",
+    "options": ["H", "I", "J", "K"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "If 2 pens cost $6, how much do 5 pens cost at the same rate?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "$15",
+    "options": ["$12", "$15", "$18", "$21"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which is the mirror image of the word 'TOP'? (choose the correct reversed order)",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "POT",
+    "options": ["POT", "OPT", "TOP", "PTO"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "If all roses are flowers and some flowers fade quickly, which statement is true?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Some flowers may be roses",
+    "options": ["All flowers are roses", "Some flowers may be roses", "No roses are flowers", "All roses fade quickly"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Find the next number in the series: 2, 4, 8, 16, ?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "32",
+    "options": ["24", "28", "32", "36"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which is a valid conclusion? If all cats are animals and some animals are pets.",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Some pets may be cats",
+    "options": ["All animals are cats", "Some pets may be cats", "No pets are cats", "All cats are pets"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which number is the smallest?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "0.25",
+    "options": ["0.5", "0.25", "0.75", "1.0"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "If a clock shows 3:00, what is the angle between the hour and minute hands?",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "90 degrees",
+    "options": ["60 degrees", "90 degrees", "120 degrees", "180 degrees"],
+    "section": "Logical"
+  },
+  {
+    "question_text": "Which word is the odd one out? Table, Chair, Sofa, Car",
+    "question_type": "MCQ",
+    "marks": 1,
+    "correct_answer": "Car",
+    "options": ["Table", "Chair", "Sofa", "Car"],
+    "section": "Logical"
+  }
+]

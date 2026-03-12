@@ -69,16 +69,16 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2 text-left shadow-lg shadow-gray-300/40 transition-all hover:bg-gray-100"
+        className="inline-flex items-center gap-3 rounded-2xl border border-stone-200/80 bg-white/80 px-3 py-2 text-left shadow-lg shadow-stone-300/20 backdrop-blur hover:-translate-y-0.5 hover:bg-white"
       >
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500 font-bold text-black">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e39a52] to-[#c77131] font-bold text-white">
           {roleBadge}
         </span>
-        <span className="max-w-[180px] truncate text-sm font-semibold text-gray-900">
+        <span className="max-w-[180px] truncate text-sm font-semibold text-stone-900">
           {displayName}
         </span>
         <svg
-          className={`h-4 w-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-stone-500 transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -88,18 +88,18 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
       </button>
 
       {open && (
-        <div className="mt-2 w-64 overflow-hidden rounded-xl border border-gray-300 bg-white shadow-2xl">
-          <div className="border-b border-gray-200 px-4 py-3">
-            <p className="truncate text-sm font-semibold text-gray-900">
+        <div className="mt-2 w-64 overflow-hidden rounded-2xl border border-stone-200/80 bg-white/95 shadow-2xl shadow-stone-300/30 backdrop-blur">
+          <div className="border-b border-stone-200 px-4 py-4">
+            <p className="truncate text-sm font-semibold text-stone-900">
               {fullName || (isAdminRoute ? "Admin" : "Candidate")}
             </p>
-            <p className="truncate text-xs text-gray-500">{email}</p>
+            <p className="truncate text-xs text-stone-500">{email}</p>
           </div>
           <button
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-red-400 transition-colors hover:bg-gray-100 disabled:opacity-60"
+            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-60"
           >
             {loggingOut ? "Logging out..." : "Log out"}
           </button>

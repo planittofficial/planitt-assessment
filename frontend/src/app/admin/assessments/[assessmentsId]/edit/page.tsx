@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getAssessmentQuestions, addQuestion, bulkAddQuestions, deleteQuestion, deleteAllQuestions, getAssessmentById, updateAssessment } from "@/services/admin.service";
 import Link from "next/link";
@@ -17,20 +17,23 @@ type ParsedQuestion = {
   section: string;
 };
 
-function validateUploadedQuestion(question: any): string | null {
+type UploadedQuestion = Partial<ParsedQuestion> & Record<string, unknown>;
+
+function validateUploadedQuestion(question: unknown): string | null {
   if (!question || typeof question !== "object") {
     return "must be an object";
   }
-  if (!question.question_text || typeof question.question_text !== "string") {
+  const candidate = question as UploadedQuestion;
+  if (!candidate.question_text || typeof candidate.question_text !== "string") {
     return "missing 'question_text' (string)";
   }
-  if (!question.question_type || !["MCQ", "DESCRIPTIVE"].includes(String(question.question_type).toUpperCase())) {
+  if (!candidate.question_type || !["MCQ", "DESCRIPTIVE"].includes(String(candidate.question_type).toUpperCase())) {
     return "invalid 'question_type' (use MCQ or DESCRIPTIVE)";
   }
-  if (question.marks === undefined || !Number.isFinite(Number(question.marks)) || Number(question.marks) <= 0) {
+  if (candidate.marks === undefined || !Number.isFinite(Number(candidate.marks)) || Number(candidate.marks) <= 0) {
     return "invalid 'marks' (must be a positive number)";
   }
-  if (!question.section || !["Quantitative", "Verbal", "Coding", "Logical"].includes(String(question.section))) {
+  if (!candidate.section || !["Quantitative", "Verbal", "Coding", "Logical"].includes(String(candidate.section))) {
     return "invalid 'section' (use Quantitative, Verbal, Coding, or Logical)";
   }
   return null;
@@ -60,12 +63,7 @@ export default function EditAssessmentPage() {
     section: "Quantitative",
   });
 
-  useEffect(() => {
-    if (!assessmentId) return;
-    loadData();
-  }, [assessmentId]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!assessmentId) return;
 
     try {
@@ -80,7 +78,12 @@ export default function EditAssessmentPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [assessmentId]);
+
+  useEffect(() => {
+    if (!assessmentId) return;
+    void loadData();
+  }, [assessmentId, loadData]);
 
   async function handleUpdateCriteria() {
     if (!assessment || !assessmentId) return;

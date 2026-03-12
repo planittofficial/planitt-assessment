@@ -54,13 +54,21 @@ export default function ResultsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">My Results</h1>
+    <main className="app-shell min-h-screen px-4 py-8 text-stone-900">
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="brand-kicker">Candidate Results</div>
+            <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-stone-950">
+              My Results
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">
+              Published scores and outcome status appear here after administrator release.
+            </p>
+          </div>
           <Link 
             href="/assessment/start" 
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-lg hover:bg-zinc-700 transition-colors text-sm font-medium"
+            className="secondary-button flex items-center gap-2 px-4 py-3 text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -70,58 +78,71 @@ export default function ResultsPage() {
         </div>
 
         {loading ? (
-        <p className="text-zinc-400">Loading results...</p>
-      ) : error ? (
-        <p className="text-red-300">{error}</p>
-      ) : results.length === 0 ? (
-        <p className="text-zinc-400">No assessments attempted yet.</p>
-      ) : (
-        results.map((r) => {
-          const published = isPublishedFlag(r.is_published);
-          return (
-          <div
-            key={r.attempt_id}
-            className="p-6 bg-zinc-900 border border-zinc-700 rounded-xl mb-4 shadow-lg flex justify-between items-center"
-          >
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-100">{r.title}</h2>
-              <p className="text-sm text-zinc-400">
-                {r.submitted_at
-                  ? `Completed on ${new Date(r.submitted_at).toLocaleDateString()}`
-                  : "Attempt in progress"}
-              </p>
-            </div>
-            <div className="text-right flex flex-col items-end gap-2">
-              <div className="flex flex-col items-end">
-                <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-widest mb-0.5">Score</p>
-                <p className="text-2xl font-bold text-amber-400">
-                  {published
-                    ? (
-                        <>
-                          {r.final_score ?? 0} <span className="text-sm text-zinc-400 font-normal">/ {r.total_marks}</span>
-                        </>
-                      )
-                    : "Not Released"}
-                </p>
-              </div>
-              {published ? (
-                <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
-                  r.result === 'PASS' ? 'bg-green-500/15 text-green-300 border border-green-500/30' : 'bg-red-500/15 text-red-300 border border-red-500/30'
-                }`}>
-                  {r.result || "PENDING"}
-                </span>
-              ) : (
-                <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-zinc-800 text-zinc-300 border border-zinc-600">
-                  Not Released
-                </span>
-              )}
-            </div>
+          <div className="hero-card rounded-[2rem] p-8 text-stone-600">Loading results...</div>
+        ) : error ? (
+          <div className="status-note error">{error}</div>
+        ) : results.length === 0 ? (
+          <div className="hero-card rounded-[2rem] p-8 text-stone-600">
+            No assessments attempted yet.
           </div>
-          );
-        })
-      )}
+        ) : (
+          <div className="space-y-4">
+            {results.map((r) => {
+              const published = isPublishedFlag(r.is_published);
+              return (
+                <div
+                  key={r.attempt_id}
+                  className="hero-card flex flex-col gap-4 rounded-[1.75rem] p-6 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <h2 className="text-xl font-bold text-stone-950">{r.title}</h2>
+                    <p className="mt-2 text-sm text-stone-600">
+                      {r.submitted_at
+                        ? `Completed on ${new Date(r.submitted_at).toLocaleDateString()}`
+                        : "Attempt in progress"}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-start gap-3 sm:items-end">
+                    <div className="flex flex-col sm:items-end">
+                      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                        Score
+                      </p>
+                      <p className="text-3xl font-extrabold text-[#c77131]">
+                        {published ? (
+                          <>
+                            {r.final_score ?? 0}
+                            <span className="ml-2 text-sm font-medium text-stone-500">
+                              / {r.total_marks}
+                            </span>
+                          </>
+                        ) : (
+                          "Not Released"
+                        )}
+                      </p>
+                    </div>
+                    {published ? (
+                      <span
+                        className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${
+                          r.result === "PASS"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {r.result || "PENDING"}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-stone-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600">
+                        Not Released
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
+    </main>
   );
 }
 

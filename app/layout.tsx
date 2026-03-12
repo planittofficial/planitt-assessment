@@ -4,6 +4,8 @@ import NotificationHost from "@/components/NotificationHost";
 import CandidateProfileMenu from "@/components/CandidateProfileMenu";
 import DialogHost from "@/components/DialogHost";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Planitt Assessments",
   description: "Candidate assessments and administration console for Planitt.",

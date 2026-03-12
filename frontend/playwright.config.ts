@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'list',
   timeout: 60000,
   use: {
-    baseURL: 'http://localhost:3003',
+    baseURL: 'https://planitt-assessment.onrender.com',
     trace: 'on-first-retry',
   },
   projects: [

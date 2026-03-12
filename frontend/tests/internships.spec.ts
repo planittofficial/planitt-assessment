@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Internship Management', () => {
   test.beforeEach(async ({ page }) => {
     // 1. Login as Admin
-    await page.goto('http://localhost:3003/login');
+    await page.goto('https://planitt-assessment.onrender.com/login');
     await page.fill('input[type="email"]', 'admin@example.com');
     await page.click('button[type="submit"]');
     

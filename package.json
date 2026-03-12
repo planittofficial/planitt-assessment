@@ -14,7 +14,9 @@
     "jsonwebtoken": "^9.0.3",
     "next": "15.1.0",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "eslint-config-next": "15.1.0",
+    "@eslint/eslintrc": "^3"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -26,7 +28,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

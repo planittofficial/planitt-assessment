@@ -31,13 +31,14 @@
     "**/*.mts"
   ],
   "id":"tsfix1",
-"exclude": [
-  "node_modules",
-  "backend",
-  "alter_schema.ts",
-  "check_db.ts",
-  "fetch_csv.ts",
-  "test-users.ts",
-  "create_test_assessment.ts"
-]
+  "exclude": [
+    "node_modules",
+    "backend",
+    "frontend",
+    "alter_schema.ts",
+    "check_db.ts",
+    "fetch_csv.ts",
+    "test-users.ts",
+    "create_test_assessment.ts"
+  ]
 }

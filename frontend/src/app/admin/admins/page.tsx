@@ -13,6 +13,11 @@ type AdminRecord = {
   createdAt?: string;
 };
 
+function formatCreatedDate(admin: AdminRecord) {
+  const createdAt = admin.created_at ?? admin.createdAt;
+  return createdAt ? new Date(createdAt).toLocaleDateString() : "-";
+}
+
 export default function AdminsPage() {
   const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -238,7 +243,7 @@ export default function AdminsPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">{admin.full_name || "-"}</td>
                     <td className="px-6 py-4 text-gray-500 text-sm font-mono">
-                      {new Date(admin.created_at || admin.createdAt).toLocaleDateString()}
+                      {formatCreatedDate(admin)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button

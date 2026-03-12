@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { authService } from "@/services/auth.service";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,14 +42,9 @@ export default function LoginPage() {
           </div>
 
           <div className="max-w-2xl space-y-6">
-            <Image
-              src="/planitt-app-black%202.png"
-              alt="Planitt logo"
-              width={200}
-              height={64}
-              priority
-              className="h-auto w-auto max-h-16"
-            />
+            <div className="text-3xl font-black tracking-[0.28em] text-stone-950 sm:text-4xl">
+              PLANITT
+            </div>
             <div className="space-y-4">
               <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-stone-950 sm:text-6xl">
                 Make assessments feel polished before the first question appears.

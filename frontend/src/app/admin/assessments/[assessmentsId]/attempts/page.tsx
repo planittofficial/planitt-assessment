@@ -69,7 +69,7 @@ function excelText(value: string) {
   return value === "N/A" ? value : `="${value}"`;
 }
 
-function csvField(value: string | number) {
+function csvField(value: string | number | undefined) {
   return `"${String(value).replaceAll('"', '""')}"`;
 }
 
@@ -231,7 +231,9 @@ export default function AdminAssessmentAttemptsPage() {
     setDeletingAllAttempts(true);
     try {
       const attemptIds = attempts.map((a) => a.id).filter(Boolean);
-      const res = await deleteAllAttemptsByAssessment(assessmentId, attemptIds);
+      const res = await deleteAllAttemptsByAssessment(assessmentId, attemptIds) as {
+        count?: number;
+      };
       await loadAttempts();
       notifySuccess(`${res?.count ?? 0} attempt(s) deleted successfully.`);
     } catch (err) {

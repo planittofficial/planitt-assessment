@@ -10,8 +10,10 @@ export type Question = {
 
 export type Assessment = {
   id: string;
+  _id?: string;
   title: string;
   description: string;
+  code?: string;
   duration_minutes: number;
   total_marks: number;
   pass_percentage: number;

@@ -33,6 +33,10 @@ type AttemptResultData = {
   answers: AttemptResultAnswer[];
 };
 
+function formatTime(value: string | null) {
+  return value ? new Date(value).toLocaleTimeString() : "N/A";
+}
+
 export default function AttemptResultsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -136,7 +140,7 @@ export default function AttemptResultsPage() {
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Started</p>
                 <p className="text-sm text-gray-700">
-                  {Number.isFinite(startedTime) ? new Date(startedAt).toLocaleTimeString() : "N/A"}
+                  {Number.isFinite(startedTime) ? formatTime(startedAt) : "N/A"}
                 </p>
               </div>
               <div>

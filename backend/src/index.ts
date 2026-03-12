@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "https://planitt-assessment.onrender.com",
+    origin: true, // Reflect the request origin to allow credentials from any origin
     credentials: true,
   })
 );

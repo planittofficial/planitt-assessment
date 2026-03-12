@@ -25,16 +25,22 @@ export async function login(req: Request, res: Response) {
     role: user.role,
   });
 
-  res.cookie("access_token", token, {
+  const cookieOptions: any = {
     httpOnly: true,
     secure: config.COOKIE_SECURE,
-    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
-    domain: config.COOKIE_DOMAIN,
+    sameSite: config.NODE_ENV === "production" ? "none" : "lax" as const,
     maxAge: 4 * 60 * 60 * 1000,
-  });
+  };
+
+  if (config.COOKIE_DOMAIN) {
+    cookieOptions.domain = config.COOKIE_DOMAIN;
+  }
+
+  res.cookie("access_token", token, cookieOptions);
 
   return res.json({
     message: "Login successful",
+    token,
     role: user.role,
     email: user.email,
     full_name: user.full_name,
@@ -67,12 +73,17 @@ export async function me(req: AuthRequest, res: Response) {
  * LOGOUT
  */
 export async function logout(_req: Request, res: Response) {
-  res.clearCookie("access_token", {
+  const cookieOptions: any = {
     httpOnly: true,
     secure: config.COOKIE_SECURE,
-    sameSite: config.NODE_ENV === "production" ? "none" : "lax",
-    domain: config.COOKIE_DOMAIN,
-  });
+    sameSite: config.NODE_ENV === "production" ? "none" : ("lax" as const),
+  };
+
+  if (config.COOKIE_DOMAIN) {
+    cookieOptions.domain = config.COOKIE_DOMAIN;
+  }
+
+  res.clearCookie("access_token", cookieOptions);
 
   return res.json({ message: "Logout successful" });
 }

@@ -15,9 +15,14 @@ export function requireAuth(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.cookies.access_token;
+  let token = req.cookies.access_token;
+
+  if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
 
   if (!token) {
+    console.log("❌ No token found in cookies or headers");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -30,7 +35,8 @@ export function requireAuth(
     };
 
     next();
-  } catch {
+  } catch (err) {
+    console.log("❌ Token verification failed:", (err as Error).message);
     return res.status(401).json({ message: "Invalid token" });
   }
 }

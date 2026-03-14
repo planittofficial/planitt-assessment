@@ -34,7 +34,7 @@ export default function NewAssessmentPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Create New Assessment</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl border border-gray-200">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 sm:p-8 rounded-xl border border-gray-200">
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-2">Title</label>
             <input
@@ -47,7 +47,7 @@ export default function NewAssessmentPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">Duration (Minutes)</label>
               <input

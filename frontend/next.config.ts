@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  reactCompiler: true,
+  experimental: {
+    reactCompiler: true,
+    webpackBuildWorker: false,
+  },
   output: "standalone",
 };
 

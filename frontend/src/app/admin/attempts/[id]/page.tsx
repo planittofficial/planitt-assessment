@@ -88,11 +88,11 @@ export default function AttemptReviewPage() {
         ) : (
           <div className="space-y-6">
             {answers.map((a) => (
-              <div
-                key={a.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300"
-              >
-                <div className="flex justify-between items-start mb-4">
+                <div
+                  key={a.id}
+                  className="bg-white border border-gray-200 rounded-xl p-6 transition-all hover:border-gray-300"
+                >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
                   <p className="text-lg font-medium flex-1 pr-8">{a.question_text}</p>
                   <div className="bg-gray-100 px-3 py-1 rounded text-xs font-bold text-gray-600">
                     Max Marks: {a.marks}
@@ -106,11 +106,11 @@ export default function AttemptReviewPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                     <button
                       onClick={() => grade(a.id, a.marks)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-green-600/10"
+                      className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-lg shadow-green-600/10 w-full sm:w-auto"
                     >
                       Full Marks ({a.marks})
                     </button>
@@ -135,7 +135,7 @@ export default function AttemptReviewPage() {
                         }
                         grade(a.id, parsedMarks);
                       }}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-gray-300"
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-5 py-2.5 rounded-lg text-sm font-bold transition-all border border-gray-300 w-full sm:w-auto"
                     >
                       Partial Marks
                     </button>

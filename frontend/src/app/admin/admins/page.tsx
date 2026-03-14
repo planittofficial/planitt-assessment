@@ -177,16 +177,16 @@ export default function AdminsPage() {
         </div>
 
         {/* Admins List */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-2xl font-bold flex items-center gap-3">
             Administrators 
             <span className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{admins.length}</span>
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             {selectedIds.length > 0 && (
               <button
                 onClick={() => handleBulkDeleteAdmins(selectedIds)}
-                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 transition-all hover:bg-red-500 hover:text-white sm:w-auto"
               >
                 🗑️ Delete Selected ({selectedIds.length})
               </button>
@@ -194,7 +194,7 @@ export default function AdminsPage() {
             {admins.length > 0 && (
               <button
                 onClick={handleDeleteAllAdmins}
-                className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg border border-red-500/50 transition-all font-bold text-sm flex items-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 transition-all hover:bg-red-500 hover:text-white sm:w-auto"
               >
                 🗑️ Delete All Admins
               </button>
@@ -202,8 +202,9 @@ export default function AdminsPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-lg">
+          <div className="overflow-x-auto">
+            <table className="min-w-[720px] w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-100 border-b border-gray-300 text-gray-600 text-[10px] uppercase tracking-widest font-black">
                 <th className="px-6 py-4 w-12">
@@ -258,7 +259,8 @@ export default function AdminsPage() {
                 ))
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
     </>

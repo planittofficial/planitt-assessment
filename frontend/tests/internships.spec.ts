@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Internship Management', () => {
+  test.skip(process.env.PLAYWRIGHT_BASE_URL !== 'https://planitt-assessment.onrender.com', 'Remote-only test; set PLAYWRIGHT_BASE_URL=https://planitt-assessment.onrender.com to run.');
+
   test.beforeEach(async ({ page }) => {
     // 1. Login as Admin
     await page.goto('https://planitt-assessment.onrender.com/login');

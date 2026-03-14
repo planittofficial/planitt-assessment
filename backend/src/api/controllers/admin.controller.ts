@@ -106,7 +106,7 @@ export async function getAttemptsByAssessment(
     const attempts = await Attempt.find({ assessment_id: assessmentId })
       .populate({
         path: "user_id",
-        select: "email",
+        select: "email full_name",
       })
       .sort({ started_at: -1 })
       .lean();
@@ -115,6 +115,7 @@ export async function getAttemptsByAssessment(
       id: a._id,
       user_id: a.user_id,
       email: (a.user_id as any)?.email,
+      full_name: (a.user_id as any)?.full_name,
       status: a.status,
       started_at: a.started_at,
       submitted_at: a.submitted_at,
@@ -199,7 +200,7 @@ export async function getAttemptDetails(req: Request, res: Response) {
     const attempt = await Attempt.findById(attemptId)
       .populate({
         path: "user_id",
-        select: "email",
+        select: "email full_name",
       })
       .populate({
         path: "assessment_id",
@@ -214,15 +215,23 @@ export async function getAttemptDetails(req: Request, res: Response) {
     const answers = await Answer.find({ attempt_id: attemptId })
       .populate({
         path: "question_id",
-        select: "question_text question_type correct_answer marks",
+        select: "question_text question_type correct_answer marks section",
       })
       .sort({ _id: 1 })
       .lean();
 
+    function formatQuestionTypeForUi(value: unknown) {
+      const normalized = String(value || "").trim().toLowerCase();
+      if (normalized === "mcq") return "MCQ";
+      if (normalized === "descriptive") return "DESCRIPTIVE";
+      return String(value || "");
+    }
+
     const formattedAnswers = answers.map((a) => ({
       answer_id: a._id,
       question_text: (a.question_id as any)?.question_text,
-      question_type: (a.question_id as any)?.question_type,
+      question_type: formatQuestionTypeForUi((a.question_id as any)?.question_type),
+      section: (a.question_id as any)?.section,
       correct_answer: (a.question_id as any)?.correct_answer,
       user_answer: a.answer_text,
       marks_obtained: a.marks_obtained,
@@ -230,10 +239,129 @@ export async function getAttemptDetails(req: Request, res: Response) {
       is_graded: a.is_graded,
     }));
 
+    const analytics = (() => {
+      const sectionStats: Record<
+        string,
+        {
+          total_questions: number;
+          attempted_questions: number;
+          mcq_total: number;
+          mcq_attempted: number;
+          mcq_correct: number;
+          mcq_incorrect: number;
+          descriptive_total: number;
+          descriptive_attempted: number;
+          descriptive_pending_grading: number;
+          marks_obtained: number;
+          max_marks: number;
+        }
+      > = {};
+
+      let totalQuestions = 0;
+      let attemptedQuestions = 0;
+      let mcqTotal = 0;
+      let mcqAttempted = 0;
+      let mcqCorrect = 0;
+      let mcqIncorrect = 0;
+      let descriptiveTotal = 0;
+      let descriptiveAttempted = 0;
+      let descriptivePendingGrading = 0;
+      let marksObtained = 0;
+      let maxMarks = 0;
+
+      for (const answer of formattedAnswers) {
+        totalQuestions += 1;
+        const sectionName = String(answer.section || "Unsectioned");
+        const questionType = String(answer.question_type || "");
+        const userAnswer = String(answer.user_answer || "").trim();
+        const hasAnswer = userAnswer.length > 0;
+        const questionMaxMarks = Number(answer.max_marks ?? 0) || 0;
+        const questionMarksObtained = Number(answer.marks_obtained ?? 0) || 0;
+        const isGraded = Boolean(answer.is_graded);
+
+        if (!sectionStats[sectionName]) {
+          sectionStats[sectionName] = {
+            total_questions: 0,
+            attempted_questions: 0,
+            mcq_total: 0,
+            mcq_attempted: 0,
+            mcq_correct: 0,
+            mcq_incorrect: 0,
+            descriptive_total: 0,
+            descriptive_attempted: 0,
+            descriptive_pending_grading: 0,
+            marks_obtained: 0,
+            max_marks: 0,
+          };
+        }
+
+        const section = sectionStats[sectionName];
+        section.total_questions += 1;
+        section.max_marks += questionMaxMarks;
+        section.marks_obtained += questionMarksObtained;
+
+        maxMarks += questionMaxMarks;
+        marksObtained += questionMarksObtained;
+
+        if (hasAnswer) {
+          attemptedQuestions += 1;
+          section.attempted_questions += 1;
+        }
+
+        if (questionType === "MCQ") {
+          mcqTotal += 1;
+          section.mcq_total += 1;
+          if (hasAnswer) {
+            mcqAttempted += 1;
+            section.mcq_attempted += 1;
+            const correctAnswer = String(answer.correct_answer || "").trim();
+            if (correctAnswer.length > 0 && userAnswer === correctAnswer) {
+              mcqCorrect += 1;
+              section.mcq_correct += 1;
+            } else {
+              mcqIncorrect += 1;
+              section.mcq_incorrect += 1;
+            }
+          }
+        } else if (questionType === "DESCRIPTIVE") {
+          descriptiveTotal += 1;
+          section.descriptive_total += 1;
+          if (hasAnswer) {
+            descriptiveAttempted += 1;
+            section.descriptive_attempted += 1;
+            if (!isGraded) {
+              descriptivePendingGrading += 1;
+              section.descriptive_pending_grading += 1;
+            }
+          }
+        }
+      }
+
+      return {
+        total_questions: totalQuestions,
+        attempted_questions: attemptedQuestions,
+        unattempted_questions: totalQuestions - attemptedQuestions,
+        mcq_total: mcqTotal,
+        mcq_attempted: mcqAttempted,
+        mcq_correct: mcqCorrect,
+        mcq_incorrect: mcqIncorrect,
+        descriptive_total: descriptiveTotal,
+        descriptive_attempted: descriptiveAttempted,
+        descriptive_pending_grading: descriptivePendingGrading,
+        marks_obtained: marksObtained,
+        max_marks: maxMarks,
+        sections: Object.entries(sectionStats).map(([section, stats]) => ({
+          section,
+          ...stats,
+        })),
+      };
+    })();
+
     res.json({
       attempt: {
         id: attempt._id,
         email: (attempt.user_id as any)?.email,
+        full_name: (attempt.user_id as any)?.full_name,
         status: attempt.status,
         started_at: attempt.started_at,
         submitted_at: attempt.submitted_at,
@@ -243,6 +371,7 @@ export async function getAttemptDetails(req: Request, res: Response) {
         total_marks: (attempt.assessment_id as any)?.total_marks,
       },
       answers: formattedAnswers,
+      analytics,
     });
   } catch (error) {
     console.error("❌ getAttemptDetails error:", error);

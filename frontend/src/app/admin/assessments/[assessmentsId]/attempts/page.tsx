@@ -23,6 +23,7 @@ type ViolationRecord = {
 type AttemptItem = {
   id: string | number;
   email?: string;
+  full_name?: string;
   status?: string;
   started_at?: string;
   submitted_at?: string;
@@ -171,12 +172,13 @@ export default function AdminAssessmentAttemptsPage() {
       return;
     }
 
-    const headers = ["Attempt ID", "Email", "Status", "Score", "Result", "Start Time", "End Time"];
+    const headers = ["Attempt ID", "Email", "Full Name", "Status", "Score", "Result", "Start Time", "End Time"];
     const csvContent = [
       headers.join(","),
       ...passed.map(a => [
         a.id,
         a.email,
+        a.full_name ?? "N/A",
         a.status,
         a.final_score ?? "0",
         a.result,
@@ -262,16 +264,16 @@ export default function AdminAssessmentAttemptsPage() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto rounded-2xl border border-gray-200 bg-white p-6 text-gray-900 shadow-xl">
-        <div className="flex justify-between items-center mb-8">
+      <div className="max-w-6xl mx-auto rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 text-gray-900 shadow-xl">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Assessment Attempts</h1>
             <p className="text-gray-500 mt-1 text-sm">Review student performance and grade descriptive answers.</p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               onClick={handleExportPassed}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2 rounded-lg font-bold transition-all border border-gray-300 flex items-center gap-2"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2 rounded-lg font-bold transition-all border border-gray-300 flex w-full items-center justify-center gap-2 sm:w-auto"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -281,14 +283,14 @@ export default function AdminAssessmentAttemptsPage() {
             <button
               onClick={handlePublishAll}
               disabled={publishingAll || attempts.length === 0}
-              className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-yellow-500/10 disabled:opacity-50"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-2 rounded-lg font-bold transition-all shadow-lg shadow-yellow-500/10 disabled:opacity-50 w-full sm:w-auto"
             >
               {publishingAll ? "Publishing..." : "Publish All Results"}
             </button>
             <button
               onClick={handleDeleteAllAttempts}
               disabled={deletingAllAttempts || attempts.length === 0}
-              className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-2 rounded-lg font-bold transition-all border border-red-200 disabled:opacity-50"
+              className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-2 rounded-lg font-bold transition-all border border-red-200 disabled:opacity-50 w-full sm:w-auto"
             >
               {deletingAllAttempts ? "Deleting..." : "Delete All Attempts"}
             </button>
@@ -296,12 +298,12 @@ export default function AdminAssessmentAttemptsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+        <div className="custom-scrollbar flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl border border-gray-200 w-full overflow-x-auto sm:w-fit">
           {(["ALL", "PASS", "FAIL"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+              className={`flex-none whitespace-nowrap px-4 py-2 rounded-lg text-sm font-bold transition-all sm:px-6 ${
                 filter === f
                   ? "bg-yellow-500 text-black shadow"
                   : "text-gray-600 hover:text-gray-900 hover:bg-white"
@@ -348,14 +350,14 @@ export default function AdminAssessmentAttemptsPage() {
                   </span>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">{a.email}</h3>
-                <div className="flex gap-4 text-xs text-gray-500">
+                <div className="flex flex-col gap-1 text-xs text-gray-500 sm:flex-row sm:gap-4">
                   <p>Started: {formatDateTime(a.started_at ?? a.start_time)}</p>
                   <p>Ended: {formatDateTime(a.submitted_at ?? a.end_time)}</p>
                 </div>
               </div>
 
-              <div className="mt-4 md:mt-0 md:ml-8 flex items-center gap-6">
-                <div className="text-right">
+              <div className="mt-4 md:mt-0 md:ml-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div className="text-left sm:text-right">
                   <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-0.5">Score</p>
                   <p className={`text-xl font-bold ${
                     a.result === 'PASS' ? 'text-emerald-600' : a.result === 'FAIL' ? 'text-red-600' : 'text-gray-700'
@@ -365,29 +367,29 @@ export default function AdminAssessmentAttemptsPage() {
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <Link
                     href={`/admin/attempts/${a.id}`}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-gray-300 w-full text-center sm:w-auto"
                   >
                     Grade Details
                   </Link>
                   <Link
                     href={`/admin/attempts/${a.id}/results`}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-yellow-500/10"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-yellow-500/10 w-full text-center sm:w-auto"
                   >
                     View Results
                   </Link>
                   <button
                     onClick={() => handleDeleteAttempt(a.id)}
                     disabled={deletingAttemptId === a.id}
-                    className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 transition-all disabled:opacity-50"
+                    className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold border border-red-200 transition-all disabled:opacity-50 w-full sm:w-auto"
                     title="Delete Attempt"
                   >
                     {deletingAttemptId === a.id ? "Deleting..." : "Delete"}
                   </button>
                   {a.is_published && (
-                    <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold border border-emerald-200">
+                    <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold border border-emerald-200 w-full text-center sm:w-auto">
                       Published
                     </span>
                   )}

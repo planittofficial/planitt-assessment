@@ -74,15 +74,15 @@ export default function AdminAssessmentsPage() {
 
   return (
     <>
-      <div className="hero-card max-w-6xl mx-auto rounded-[2rem] p-6 text-stone-900 shadow-xl">
-        <div className="flex justify-between items-center mb-8">
+      <div className="hero-card mx-auto max-w-6xl rounded-[2rem] p-4 text-stone-900 shadow-xl sm:p-6">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-stone-500">Assessment Library</p>
             <h1 className="mt-2 text-3xl font-bold text-stone-950">Assessments</h1>
           </div>
           <Link
             href="/admin/assessments/new"
-            className="primary-button px-6 py-3 text-sm"
+            className="primary-button w-full px-6 py-3 text-center text-sm sm:w-auto"
           >
             + Create Assessment
           </Link>
@@ -97,11 +97,11 @@ export default function AdminAssessmentsPage() {
           return (
           <div
             key={assessmentId || a.title}
-            className="mb-4 flex justify-between rounded-[1.5rem] border border-stone-200/80 bg-white/80 p-5 shadow-sm"
+            className="mb-4 flex flex-col gap-4 rounded-[1.5rem] border border-stone-200/80 bg-white/80 p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between"
           >
             <div>
               <p className="font-semibold text-stone-900">{a.title}</p>
-              <div className="flex gap-2 items-center mt-1">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-600">
                   Code: <span className="font-mono font-bold uppercase text-[#c77131]">{a.code}</span>
                 </span>
@@ -119,38 +119,38 @@ export default function AdminAssessmentsPage() {
               </div>
             </div>
 
-            <div className="flex gap-4 items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <button
                 onClick={() => handlePublishAll(assessmentId)}
                 disabled={!hasAssessmentId || publishingId === assessmentId}
-                className="secondary-button rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 disabled:opacity-50"
+                className="secondary-button w-full justify-center rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 disabled:opacity-50 sm:w-auto sm:text-sm"
               >
                 {publishingId === assessmentId ? "Publishing..." : "Publish Results"}
               </button>
               {hasAssessmentId ? (
                 <Link
                   href={`/admin/assessments/${assessmentId}/edit`}
-                  className="secondary-button rounded-xl px-3 py-2 text-sm"
+                  className="secondary-button w-full justify-center rounded-xl px-3 py-2 text-xs sm:w-auto sm:text-sm"
                 >
                   Manage Questions
                 </Link>
               ) : (
-                <span className="rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-500">Manage Questions</span>
+                <span className="w-full rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-center text-xs font-semibold text-stone-500 sm:w-auto sm:text-sm">Manage Questions</span>
               )}
               {hasAssessmentId ? (
                 <Link
                   href={`/admin/assessments/${assessmentId}/attempts`}
-                  className="secondary-button rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800"
+                  className="secondary-button w-full justify-center rounded-xl border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:w-auto sm:text-sm"
                 >
                   View Attempts -&gt;
                 </Link>
               ) : (
-                <span className="rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-sm font-semibold text-stone-500">View Attempts</span>
+                <span className="w-full rounded-xl border border-stone-200 bg-stone-100 px-3 py-2 text-center text-xs font-semibold text-stone-500 sm:w-auto sm:text-sm">View Attempts</span>
               )}
               <button
                 onClick={() => handleDeleteAssessment(assessmentId)}
                 disabled={!hasAssessmentId || deletingAssessmentId === assessmentId}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition-all hover:bg-rose-100 disabled:opacity-50"
+                className="w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-100 disabled:opacity-50 sm:w-auto sm:text-sm"
               >
                 {deletingAssessmentId === assessmentId ? "Deleting..." : "Delete Assessment"}
               </button>

@@ -36,6 +36,11 @@ export async function apiFetch(
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      // Keep client state consistent if a token is expired/invalid.
+      localStorage.removeItem("token");
+    }
+
     const contentType = res.headers.get("content-type") || "";
     const isJson = contentType.includes("application/json");
     const data: ApiErrorBody = isJson

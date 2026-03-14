@@ -298,28 +298,28 @@ export default function EditAssessmentPage() {
   return (
     <>
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-bold">Manage Questions</h1>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <Link
               href="/admin"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-sm font-semibold"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-center text-sm font-semibold sm:w-auto"
             >
               Return to Dashboard
             </Link>
             <Link
               href="/admin/assessments"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-sm font-semibold"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors text-center text-sm font-semibold sm:w-auto"
             >
               Back to Assessments
             </Link>
-            <label className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center gap-2 cursor-pointer text-sm">
+            <label className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm sm:w-auto">
               <span>📁 Upload JSON</span>
               <input type="file" accept=".json" onChange={handleJsonUpload} className="hidden" />
             </label>
             <button
               onClick={() => setShowSmartPaste(!showSmartPaste)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center gap-2 text-sm"
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg border border-gray-300 transition-colors flex items-center justify-center gap-2 text-sm sm:w-auto"
             >
               {showSmartPaste ? "← Manual Mode" : "✨ Smart Paste"}
             </button>
@@ -467,7 +467,7 @@ export default function EditAssessmentPage() {
                   placeholder="Enter the question..."
                 />
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-2">Type</label>
                   <select
@@ -597,7 +597,7 @@ export default function EditAssessmentPage() {
                     </div>
                   </div>
                   {q.question_type === "MCQ" && q.options && (
-                    <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="grid grid-cols-1 gap-3 mt-4 sm:grid-cols-2">
                       {q.options.filter((o) => o.text).map((o) => (
                         <div 
                           key={o.id} 

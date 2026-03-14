@@ -15,6 +15,9 @@
   --success-soft: #e6f5ee;
   --danger-soft: #ffebe7;
   --shadow-lg: 0 24px 80px rgba(111, 74, 49, 0.14);
+  /* Avoid build/runtime network fetches from `next/font/google` in offline/CI environments. */
+  --font-geist-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 @theme inline {

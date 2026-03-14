@@ -15,6 +15,17 @@ export function useAuth(requireAuth = false) {
     let isMounted = true;
 
     async function loadUser() {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      // Avoid noisy 401s on public pages when logged out.
+      // If a route requires auth, we still check the session and redirect on failure.
+      if (!requireAuth && !token) {
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         const data = await authService.me();
         if (isMounted) {

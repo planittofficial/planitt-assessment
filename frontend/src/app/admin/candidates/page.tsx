@@ -294,24 +294,24 @@ export default function CandidatesPage() {
             <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Manage Candidates</h1>
             <p className="text-gray-500 mt-1">Add, import, and manage your assessment participants.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
              {selectedIds.length > 0 && (
-              <button
-                onClick={handleBulkDelete}
-                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-xl border border-red-200 transition-all font-bold text-sm flex items-center gap-2 shadow-sm"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                Delete Selected ({selectedIds.length})
-              </button>
-            )}
-            {candidates.length > 0 && (
-              <button
-                onClick={handleDeleteAllCandidates}
-                className="bg-white hover:bg-red-50 text-red-500 px-4 py-2.5 rounded-xl border border-gray-200 hover:border-red-200 transition-all font-bold text-sm flex items-center gap-2 shadow-sm"
-              >
-                Clear Database
-              </button>
-            )}
+               <button
+                 onClick={handleBulkDelete}
+                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition-all hover:bg-red-100 sm:w-auto"
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                 Delete Selected ({selectedIds.length})
+               </button>
+             )}
+             {candidates.length > 0 && (
+               <button
+                 onClick={handleDeleteAllCandidates}
+                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-red-500 shadow-sm transition-all hover:border-red-200 hover:bg-red-50 sm:w-auto"
+               >
+                 Clear Database
+               </button>
+             )}
           </div>
         </div>
 

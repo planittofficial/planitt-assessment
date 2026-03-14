@@ -63,18 +63,18 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
 
   return (
     <div
-      className={inline ? "relative z-50" : "fixed right-6 top-6 z-50"}
+      className={inline ? "relative z-50" : "fixed right-3 top-3 z-50 sm:right-6 sm:top-6"}
       ref={menuRef}
     >
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center gap-3 rounded-2xl border border-stone-200/80 bg-white/80 px-3 py-2 text-left shadow-lg shadow-stone-300/20 backdrop-blur hover:-translate-y-0.5 hover:bg-white"
+        className="inline-flex items-center gap-2 rounded-2xl border border-stone-200/80 bg-white/80 px-2 py-2 text-left shadow-lg shadow-stone-300/20 backdrop-blur hover:-translate-y-0.5 hover:bg-white sm:gap-3 sm:px-3"
       >
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#e39a52] to-[#c77131] font-bold text-white">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#e39a52] to-[#c77131] text-sm font-bold text-white sm:h-9 sm:w-9 sm:text-base">
           {roleBadge}
         </span>
-        <span className="max-w-[180px] truncate text-sm font-semibold text-stone-900">
+        <span className="hidden max-w-[180px] truncate text-sm font-semibold text-stone-900 sm:inline">
           {displayName}
         </span>
         <svg
@@ -88,7 +88,7 @@ export default function CandidateProfileMenu({ inline = false }: CandidateProfil
       </button>
 
       {open && (
-        <div className="mt-2 w-64 overflow-hidden rounded-2xl border border-stone-200/80 bg-white/95 shadow-2xl shadow-stone-300/30 backdrop-blur">
+        <div className="mt-2 w-56 overflow-hidden rounded-2xl border border-stone-200/80 bg-white/95 shadow-2xl shadow-stone-300/30 backdrop-blur sm:w-64">
           <div className="border-b border-stone-200 px-4 py-4">
             <p className="truncate text-sm font-semibold text-stone-900">
               {fullName || (isAdminRoute ? "Admin" : "Candidate")}

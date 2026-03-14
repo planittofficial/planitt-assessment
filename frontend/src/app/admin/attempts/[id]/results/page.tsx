@@ -11,6 +11,7 @@ type AttemptResultAnswer = {
   marks_obtained: number;
   max_marks: number;
   question_type: "MCQ" | "DESCRIPTIVE" | string;
+  section?: string;
   user_answer?: string;
   correct_answer?: string;
   is_graded?: boolean;
@@ -24,13 +25,46 @@ type AttemptResultSummary = {
   result?: "PASS" | "FAIL" | string;
   assessment_title: string;
   email: string;
+  full_name?: string;
   final_score: number;
   total_marks: number;
+};
+
+type AttemptAnalyticsSection = {
+  section: string;
+  total_questions: number;
+  attempted_questions: number;
+  mcq_total: number;
+  mcq_attempted: number;
+  mcq_correct: number;
+  mcq_incorrect: number;
+  descriptive_total: number;
+  descriptive_attempted: number;
+  descriptive_pending_grading: number;
+  marks_obtained: number;
+  max_marks: number;
+};
+
+type AttemptAnalytics = {
+  total_questions: number;
+  attempted_questions: number;
+  unattempted_questions: number;
+  mcq_total: number;
+  mcq_attempted: number;
+  mcq_correct: number;
+  mcq_incorrect: number;
+  descriptive_total: number;
+  descriptive_attempted: number;
+  descriptive_pending_grading: number;
+  marks_obtained: number;
+  max_marks: number;
+  sections: AttemptAnalyticsSection[];
 };
 
 type AttemptResultData = {
   attempt: AttemptResultSummary;
   answers: AttemptResultAnswer[];
+  analytics?: AttemptAnalytics;
 };
 
 function formatTime(value: string | null) {
@@ -98,6 +132,7 @@ export default function AttemptResultsPage() {
   const startedTime = startedAt ? new Date(startedAt).getTime() : NaN;
   const submittedTime = submittedAt ? new Date(submittedAt).getTime() : NaN;
   const hasValidDuration = Number.isFinite(startedTime) && Number.isFinite(submittedTime) && submittedTime >= startedTime;
+  const analytics = data.analytics;
 
   return (
     <>
@@ -109,8 +144,8 @@ export default function AttemptResultsPage() {
           ← Back
         </button>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-6">
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-8 mb-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 sm:p-6">
             <div className={`text-4xl font-black ${
               attempt.result === 'PASS' ? 'text-green-500/20' : 'text-red-500/20'
             }`}>
@@ -120,7 +155,17 @@ export default function AttemptResultsPage() {
 
           <div className="relative z-10">
             <h1 className="text-3xl font-bold mb-2">{attempt.assessment_title}</h1>
-            <p className="text-gray-600 mb-6 font-medium">{attempt.email}</p>
+            <p className="text-gray-600 mb-6 font-medium">
+              {attempt.full_name ? (
+                <>
+                  <span className="text-gray-900 font-semibold">{attempt.full_name}</span>
+                  <span className="mx-2 text-gray-300">•</span>
+                  <span>{attempt.email}</span>
+                </>
+              ) : (
+                attempt.email
+              )}
+            </p>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
@@ -155,6 +200,85 @@ export default function AttemptResultsPage() {
             </div>
           </div>
         </div>
+
+        {analytics && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-8 mb-8 shadow-2xl">
+            <h2 className="text-xl font-bold mb-6">Attempt Analytics</h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Total Questions</p>
+                <p className="text-2xl font-mono font-bold text-gray-900">{analytics.total_questions}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Solved (Attempted)</p>
+                <p className="text-2xl font-mono font-bold text-gray-900">
+                  {analytics.attempted_questions} <span className="text-sm text-gray-500">/ {analytics.total_questions}</span>
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Unattempted</p>
+                <p className="text-2xl font-mono font-bold text-gray-900">{analytics.unattempted_questions}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">MCQ Correct</p>
+                <p className="text-2xl font-mono font-bold text-emerald-600">{analytics.mcq_correct}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">MCQ Incorrect</p>
+                <p className="text-2xl font-mono font-bold text-rose-600">{analytics.mcq_incorrect}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Pending Grading</p>
+                <p className="text-2xl font-mono font-bold text-amber-700">{analytics.descriptive_pending_grading}</p>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-bold mb-4">Section Breakdown</h3>
+            <div className="space-y-3">
+              {analytics.sections
+                .slice()
+                .sort((a, b) => (b.max_marks || 0) - (a.max_marks || 0))
+                .map((s) => {
+                  const pct = s.max_marks > 0 ? Math.round((s.marks_obtained / s.max_marks) * 100) : 0;
+                  const mcqPct = s.mcq_attempted > 0 ? Math.round((s.mcq_correct / s.mcq_attempted) * 100) : 0;
+                  return (
+                    <div key={s.section} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{s.section}</p>
+                          <p className="text-xs text-gray-600">
+                            Attempted {s.attempted_questions}/{s.total_questions}
+                            {s.mcq_total > 0 && (
+                              <>
+                                <span className="mx-2 text-gray-300">•</span>
+                                MCQ Accuracy {mcqPct}% ({s.mcq_correct}/{s.mcq_attempted})
+                              </>
+                            )}
+                            {s.descriptive_pending_grading > 0 && (
+                              <>
+                                <span className="mx-2 text-gray-300">•</span>
+                                Pending grading {s.descriptive_pending_grading}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="text-sm font-mono font-bold text-gray-900">
+                            {s.marks_obtained} <span className="text-xs text-gray-500">/ {s.max_marks}</span>
+                          </p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{pct}% score</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                        <div className="h-full bg-emerald-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
 
         <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
           Question Breakdown

@@ -18,18 +18,7 @@ const allowedOrigins = config_1.default.CORS_ORIGIN.split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
 const corsOptions = {
-    origin(origin, callback) {
-        // Allow non-browser and same-origin requests without Origin header.
-        if (!origin) {
-            callback(null, true);
-            return;
-        }
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-            return;
-        }
-        callback(new Error("Not allowed by CORS"));
-    },
+    origin: true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

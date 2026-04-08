@@ -19,6 +19,7 @@ router.get("/attempts/:attemptId/violations", admin_controller_1.getViolationsBy
 router.get("/attempts/:attemptId/descriptive", admin_controller_1.getDescriptiveAnswers);
 router.post("/answers/grade", admin_controller_1.gradeDescriptiveAnswer);
 router.post("/attempts/:attemptId/publish", admin_controller_1.publishResult);
+router.post("/attempts/:attemptId/result", admin_controller_1.overrideAttemptResult);
 router.delete("/attempts/:attemptId", admin_controller_1.deleteAttempt);
 router.post("/attempts/:attemptId/delete", admin_controller_1.deleteAttempt);
 router.delete("/assessments/:assessmentId/attempts/:attemptId", admin_controller_1.deleteAttempt);

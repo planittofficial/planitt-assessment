@@ -65,6 +65,10 @@ const attemptSchema = new mongoose_1.Schema({
         default: false,
     },
     result: String,
+    result_override: {
+        type: String,
+        default: null,
+    },
 });
 attemptSchema.index({ user_id: 1, assessment_id: 1 });
 attemptSchema.index({ user_id: 1 });

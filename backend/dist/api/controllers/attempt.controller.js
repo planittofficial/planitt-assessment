@@ -150,6 +150,7 @@ async function startAttempt(req, res) {
                 return res.status(409).json({
                     message: "An active attempt already exists",
                     attemptId: existingAttempt._id,
+                    durationMinutes: assessment.duration_minutes,
                 });
             }
             return res.status(403).json({
@@ -247,8 +248,12 @@ async function getQuestions(req, res) {
         if (!attempt) {
             return res.status(404).json({ message: "Attempt not found" });
         }
+        const assessment = await Assessment_1.default.findById(attempt.assessment_id).select("duration_minutes");
         const questions = await fetchQuestionsForAttempt(attempt.assessment_id.toString(), attemptId);
-        return res.json(questions);
+        return res.json({
+            questions,
+            durationMinutes: assessment?.duration_minutes ?? 60,
+        });
     }
     catch (error) {
         console.error("getQuestions error:", error);

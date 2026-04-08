@@ -14,13 +14,31 @@ const violation_1 = __importDefault(require("./api/routes/violation"));
 const admin_1 = __importDefault(require("./api/routes/admin"));
 const result_1 = __importDefault(require("./api/routes/result"));
 const app = (0, express_1.default)();
+const allowedOrigins = config_1.default.CORS_ORIGIN.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+const corsOptions = {
+    origin(origin, callback) {
+        // Allow non-browser and same-origin requests without Origin header.
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+};
 // ---------- Middlewares ----------
 app.use(express_1.default.json());
 app.use((0, cookie_parser_1.default)());
-app.use((0, cors_1.default)({
-    origin: process.env.CORS_ORIGIN || "https://planitt-assessment.onrender.com",
-    credentials: true,
-}));
+app.use((0, cors_1.default)(corsOptions));
+app.options("*", (0, cors_1.default)(corsOptions));
 // ---------- Routes ----------
 app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });

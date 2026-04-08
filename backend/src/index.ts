@@ -10,16 +10,35 @@ import adminRoutes from "./api/routes/admin";
 import resultRoutes from "./api/routes/result";
 
 const app = express();
+const allowedOrigins = config.CORS_ORIGIN.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions: cors.CorsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser and same-origin requests without Origin header.
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
 // ---------- Middlewares ----------
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: true, // Reflect the request origin to allow credentials from any origin
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // ---------- Routes ----------
 app.get("/health", (_req, res) => {

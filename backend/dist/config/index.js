@@ -12,6 +12,8 @@ const config = {
     JWT_EXPIRES_IN: "4h",
     COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
     COOKIE_SECURE: process.env.NODE_ENV === "production",
-    CORS_ORIGIN: process.env.CORS_ORIGIN || "https://planitt-assessment.onrender.com",
+    CORS_ORIGIN: process.env.CORS_ORIGIN ||
+        "https://planitt-assessment.onrender.com,https://test.planitt.in",
+    ADMIN_SHARED_PASSWORD: process.env.ADMIN_SHARED_PASSWORD || "",
 };
 exports.default = config;

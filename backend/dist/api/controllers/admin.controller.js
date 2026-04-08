@@ -12,6 +12,7 @@ exports.getAttemptDetails = getAttemptDetails;
 exports.getDescriptiveAnswers = getDescriptiveAnswers;
 exports.gradeDescriptiveAnswer = gradeDescriptiveAnswer;
 exports.publishResult = publishResult;
+exports.overrideAttemptResult = overrideAttemptResult;
 exports.deleteAttempt = deleteAttempt;
 exports.deleteAllAttemptsByAssessment = deleteAllAttemptsByAssessment;
 exports.deleteAssessment = deleteAssessment;
@@ -39,6 +40,7 @@ const Answer_1 = __importDefault(require("../../models/Answer"));
 const Attempt_1 = __importDefault(require("../../models/Attempt"));
 const Violation_1 = __importDefault(require("../../models/Violation"));
 const finalizeAttempt_service_1 = require("../../services/finalizeAttempt.service");
+const result_service_1 = require("../../services/result.service");
 const mongoose_1 = __importDefault(require("mongoose"));
 const ALLOWED_SECTIONS = new Set(["Quantitative", "Verbal", "Coding", "Logical"]);
 function normalizeQuestionType(value) {
@@ -70,13 +72,14 @@ function requireObjectIdParam(res, name, value) {
 async function getAssessments(req, res) {
     try {
         const assessments = await Assessment_1.default.find()
-            .select("_id title is_active code created_at")
+            .select("_id title is_active code created_at duration_minutes")
             .sort({ created_at: -1 });
         const formatted = assessments.map((a) => ({
             id: a._id,
             title: a.title,
             status: a.is_active ? "active" : "inactive",
             code: a.code,
+            duration_minutes: a.duration_minutes,
             created_at: a.created_at,
         }));
         res.json(formatted);
@@ -125,7 +128,7 @@ async function getAttemptsByAssessment(req, res) {
         const attempts = await Attempt_1.default.find({ assessment_id: assessmentId })
             .populate({
             path: "user_id",
-            select: "email",
+            select: "email full_name",
         })
             .sort({ started_at: -1 })
             .lean();
@@ -133,11 +136,13 @@ async function getAttemptsByAssessment(req, res) {
             id: a._id,
             user_id: a.user_id,
             email: a.user_id?.email,
+            full_name: a.user_id?.full_name,
             status: a.status,
             started_at: a.started_at,
             submitted_at: a.submitted_at,
             final_score: a.final_score,
             result: a.result,
+            result_override: a.result_override,
             is_published: a.is_published,
         }));
         return res.json(formatted);
@@ -208,7 +213,7 @@ async function getAttemptDetails(req, res) {
         const attempt = await Attempt_1.default.findById(attemptId)
             .populate({
             path: "user_id",
-            select: "email",
+            select: "email full_name",
         })
             .populate({
             path: "assessment_id",
@@ -221,33 +226,141 @@ async function getAttemptDetails(req, res) {
         const answers = await Answer_1.default.find({ attempt_id: attemptId })
             .populate({
             path: "question_id",
-            select: "question_text question_type correct_answer marks",
+            select: "question_text question_type correct_answer marks section",
         })
             .sort({ _id: 1 })
             .lean();
+        function formatQuestionTypeForUi(value) {
+            const normalized = String(value || "").trim().toLowerCase();
+            if (normalized === "mcq")
+                return "MCQ";
+            if (normalized === "descriptive")
+                return "DESCRIPTIVE";
+            return String(value || "");
+        }
         const formattedAnswers = answers.map((a) => ({
             answer_id: a._id,
             question_text: a.question_id?.question_text,
-            question_type: a.question_id?.question_type,
+            question_type: formatQuestionTypeForUi(a.question_id?.question_type),
+            section: a.question_id?.section,
             correct_answer: a.question_id?.correct_answer,
             user_answer: a.answer_text,
             marks_obtained: a.marks_obtained,
             max_marks: a.question_id?.marks,
             is_graded: a.is_graded,
         }));
+        const analytics = (() => {
+            const sectionStats = {};
+            let totalQuestions = 0;
+            let attemptedQuestions = 0;
+            let mcqTotal = 0;
+            let mcqAttempted = 0;
+            let mcqCorrect = 0;
+            let mcqIncorrect = 0;
+            let descriptiveTotal = 0;
+            let descriptiveAttempted = 0;
+            let descriptivePendingGrading = 0;
+            let marksObtained = 0;
+            let maxMarks = 0;
+            for (const answer of formattedAnswers) {
+                totalQuestions += 1;
+                const sectionName = String(answer.section || "Unsectioned");
+                const questionType = String(answer.question_type || "");
+                const userAnswer = String(answer.user_answer || "").trim();
+                const hasAnswer = userAnswer.length > 0;
+                const questionMaxMarks = Number(answer.max_marks ?? 0) || 0;
+                const questionMarksObtained = Number(answer.marks_obtained ?? 0) || 0;
+                const isGraded = Boolean(answer.is_graded);
+                if (!sectionStats[sectionName]) {
+                    sectionStats[sectionName] = {
+                        total_questions: 0,
+                        attempted_questions: 0,
+                        mcq_total: 0,
+                        mcq_attempted: 0,
+                        mcq_correct: 0,
+                        mcq_incorrect: 0,
+                        descriptive_total: 0,
+                        descriptive_attempted: 0,
+                        descriptive_pending_grading: 0,
+                        marks_obtained: 0,
+                        max_marks: 0,
+                    };
+                }
+                const section = sectionStats[sectionName];
+                section.total_questions += 1;
+                section.max_marks += questionMaxMarks;
+                section.marks_obtained += questionMarksObtained;
+                maxMarks += questionMaxMarks;
+                marksObtained += questionMarksObtained;
+                if (hasAnswer) {
+                    attemptedQuestions += 1;
+                    section.attempted_questions += 1;
+                }
+                if (questionType === "MCQ") {
+                    mcqTotal += 1;
+                    section.mcq_total += 1;
+                    if (hasAnswer) {
+                        mcqAttempted += 1;
+                        section.mcq_attempted += 1;
+                        const correctAnswer = String(answer.correct_answer || "").trim();
+                        if (correctAnswer.length > 0 && userAnswer === correctAnswer) {
+                            mcqCorrect += 1;
+                            section.mcq_correct += 1;
+                        }
+                        else {
+                            mcqIncorrect += 1;
+                            section.mcq_incorrect += 1;
+                        }
+                    }
+                }
+                else if (questionType === "DESCRIPTIVE") {
+                    descriptiveTotal += 1;
+                    section.descriptive_total += 1;
+                    if (hasAnswer) {
+                        descriptiveAttempted += 1;
+                        section.descriptive_attempted += 1;
+                        if (!isGraded) {
+                            descriptivePendingGrading += 1;
+                            section.descriptive_pending_grading += 1;
+                        }
+                    }
+                }
+            }
+            return {
+                total_questions: totalQuestions,
+                attempted_questions: attemptedQuestions,
+                unattempted_questions: totalQuestions - attemptedQuestions,
+                mcq_total: mcqTotal,
+                mcq_attempted: mcqAttempted,
+                mcq_correct: mcqCorrect,
+                mcq_incorrect: mcqIncorrect,
+                descriptive_total: descriptiveTotal,
+                descriptive_attempted: descriptiveAttempted,
+                descriptive_pending_grading: descriptivePendingGrading,
+                marks_obtained: marksObtained,
+                max_marks: maxMarks,
+                sections: Object.entries(sectionStats).map(([section, stats]) => ({
+                    section,
+                    ...stats,
+                })),
+            };
+        })();
         res.json({
             attempt: {
                 id: attempt._id,
                 email: attempt.user_id?.email,
+                full_name: attempt.user_id?.full_name,
                 status: attempt.status,
                 started_at: attempt.started_at,
                 submitted_at: attempt.submitted_at,
                 final_score: attempt.final_score,
                 result: attempt.result,
+                result_override: attempt.result_override,
                 assessment_title: attempt.assessment_id?.title,
                 total_marks: attempt.assessment_id?.total_marks,
             },
             answers: formattedAnswers,
+            analytics,
         });
     }
     catch (error) {
@@ -367,6 +480,31 @@ async function publishResult(req, res) {
     catch (error) {
         console.error("❌ publishResult error:", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+async function overrideAttemptResult(req, res) {
+    try {
+        const { attemptId } = req.params;
+        if (!requireObjectIdParam(res, "attemptId", attemptId)) {
+            return;
+        }
+        const requestedResult = String(req.body?.result || "").trim().toUpperCase();
+        const clearOverride = Boolean(req.body?.clearOverride);
+        if (!clearOverride && requestedResult !== "PASS" && requestedResult !== "FAIL") {
+            return res.status(400).json({ message: "result must be PASS or FAIL" });
+        }
+        const outcome = await (0, result_service_1.setManualResultOverride)(attemptId, clearOverride ? null : requestedResult);
+        return res.json({
+            message: clearOverride
+                ? "Manual result cleared and recalculated successfully"
+                : "Manual result updated successfully",
+            result: outcome.result,
+            source: outcome.source,
+        });
+    }
+    catch (error) {
+        console.error("overrideAttemptResult error:", error);
+        return res.status(500).json({ message: error?.message || "Internal server error" });
     }
 }
 async function deleteAttempt(req, res) {
@@ -513,9 +651,9 @@ async function updateAssessment(req, res) {
         const updateData = {};
         if (title)
             updateData.title = title;
-        if (duration_minutes)
+        if (duration_minutes !== undefined)
             updateData.duration_minutes = duration_minutes;
-        if (pass_percentage)
+        if (pass_percentage !== undefined)
             updateData.pass_percentage = pass_percentage;
         if (status !== undefined) {
             const normalizedStatus = typeof status === "string"
@@ -527,11 +665,18 @@ async function updateAssessment(req, res) {
                 updateData.is_active = normalizedStatus;
             }
         }
+        const shouldRecalculateResults = pass_percentage !== undefined;
         const result = await Assessment_1.default.findByIdAndUpdate(assessmentId, updateData, { new: true });
         if (!result) {
             return res.status(404).json({ message: "Assessment not found" });
         }
-        res.json({ message: "Assessment updated successfully" });
+        const recalculation = shouldRecalculateResults
+            ? await (0, result_service_1.recalculateAssessmentResults)(assessmentId)
+            : null;
+        res.json({
+            message: "Assessment updated successfully",
+            recalculation,
+        });
     }
     catch (error) {
         console.error("❌ updateAssessment error:", error);

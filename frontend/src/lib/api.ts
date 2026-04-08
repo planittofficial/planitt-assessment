@@ -1,5 +1,14 @@
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://planitt-assessment.onrender.com";
+const apiBaseUrlFromEnv = (process.env.NEXT_PUBLIC_API_URL || "").replace(
+  /\/$/,
+  ""
+);
+
+const fallbackApiBaseUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:5000"
+    : "https://planitt-assessment.onrender.com";
+
+export const API_BASE_URL = apiBaseUrlFromEnv || fallbackApiBaseUrl;
 
 type ApiErrorBody = {
   message?: string;

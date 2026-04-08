@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -16,7 +18,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await authService.login(email);
+      const res = await authService.login(
+        email,
+        isAdminLogin ? password : undefined
+      );
 
       if (res.role === "ADMIN") {
         router.push("/admin");
@@ -103,6 +108,38 @@ export default function LoginPage() {
             className="field-input mb-5 px-4 py-3.5 text-base"
           />
 
+          <label className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-700">
+            <input
+              type="checkbox"
+              checked={isAdminLogin}
+              onChange={(e) => {
+                setIsAdminLogin(e.target.checked);
+                if (!e.target.checked) {
+                  setPassword("");
+                }
+              }}
+              className="h-4 w-4 rounded border-stone-300 accent-[#c77131]"
+            />
+            Login as admin
+          </label>
+
+          {isAdminLogin && (
+            <>
+              <label className="mb-3 block text-sm font-semibold text-stone-700">
+                Admin password
+              </label>
+              <input
+                type="password"
+                placeholder="Enter shared admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required={isAdminLogin}
+                className="field-input mb-5 px-4 py-3.5 text-base"
+                autoComplete="current-password"
+              />
+            </>
+          )}
+
           <button
             disabled={loading}
             className="primary-button w-full px-6 py-3.5 text-base"
@@ -111,7 +148,7 @@ export default function LoginPage() {
           </button>
 
           <div className="mt-6 rounded-2xl border border-amber-200/70 bg-amber-50/90 px-4 py-4 text-sm leading-6 text-amber-900">
-            Keep your email ready. Admin users are redirected to the dashboard automatically.
+            Candidates only need email. Admin users must enable admin login and enter the shared password.
           </div>
         </form>
       </div>

@@ -8,7 +8,7 @@ import { AuthRequest } from "../middlewares/auth.middleware";
  * LOGIN
  */
 export async function login(req: Request, res: Response) {
-  const { email } = req.body;
+  const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -18,6 +18,19 @@ export async function login(req: Request, res: Response) {
 
   if (!user) {
     return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  if (String(user.role || "").toUpperCase() === "ADMIN") {
+    const configuredAdminPassword = config.ADMIN_SHARED_PASSWORD;
+    if (!configuredAdminPassword) {
+      return res.status(500).json({
+        message: "Admin login password is not configured on the server.",
+      });
+    }
+
+    if (!password || password !== configuredAdminPassword) {
+      return res.status(401).json({ message: "Invalid admin password" });
+    }
   }
 
   const token = signJwt({

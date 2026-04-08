@@ -2,14 +2,14 @@ import { AuthLoginResponse, AuthUser } from "@/types";
 import { API_BASE_URL } from "@/lib/api";
 
 export const authService = {
-  async login(email: string): Promise<AuthLoginResponse> {
+  async login(email: string, password?: string): Promise<AuthLoginResponse> {
     const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {

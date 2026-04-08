@@ -11,6 +11,7 @@ const config = {
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
   COOKIE_SECURE: process.env.NODE_ENV === "production",
   CORS_ORIGIN: process.env.CORS_ORIGIN || "https://planitt-assessment.onrender.com",
+  ADMIN_SHARED_PASSWORD: process.env.ADMIN_SHARED_PASSWORD || "",
 };
 
 export default config;

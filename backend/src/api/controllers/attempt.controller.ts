@@ -180,6 +180,7 @@ export async function startAttempt(req: AuthRequest, res: Response) {
         return res.status(409).json({
           message: "An active attempt already exists",
           attemptId: existingAttempt._id,
+          durationMinutes: assessment.duration_minutes,
         });
       }
 
@@ -296,12 +297,19 @@ export async function getQuestions(req: AuthRequest, res: Response) {
       return res.status(404).json({ message: "Attempt not found" });
     }
 
+    const assessment = await Assessment.findById(attempt.assessment_id).select(
+      "duration_minutes"
+    );
+
     const questions = await fetchQuestionsForAttempt(
       attempt.assessment_id.toString(),
       attemptId
     );
 
-    return res.json(questions);
+    return res.json({
+      questions,
+      durationMinutes: assessment?.duration_minutes ?? 60,
+    });
   } catch (error) {
     console.error("getQuestions error:", error);
     return res.status(500).json({ message: "Internal server error" });

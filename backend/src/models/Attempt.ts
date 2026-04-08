@@ -10,6 +10,7 @@ export interface IAttempt extends Document {
   final_score?: number;
   is_published: boolean;
   result?: string;
+  result_override?: string | null;
 }
 
 const attemptSchema = new Schema<IAttempt>(
@@ -44,6 +45,10 @@ const attemptSchema = new Schema<IAttempt>(
       default: false,
     },
     result: String,
+    result_override: {
+      type: String,
+      default: null,
+    },
   }
 );
 

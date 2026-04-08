@@ -10,6 +10,19 @@ import { openConfirmDialog } from "@/lib/dialog";
 import { isMobileOrTabletDevice } from "@/lib/device";
 
 const SECTIONS = ["Quantitative", "Verbal", "Coding", "Logical"] as const;
+const DEFAULT_DURATION_MINUTES = 60;
+
+function getStoredDurationSeconds(attemptId: string) {
+  if (typeof window === "undefined") return null;
+  const storedValue = window.sessionStorage.getItem(`attempt-duration:${attemptId}`);
+  const storedMinutes = Number(storedValue);
+
+  if (!Number.isFinite(storedMinutes) || storedMinutes <= 0) {
+    return null;
+  }
+
+  return storedMinutes * 60;
+}
 
 export default function AttemptPage() {
   const { attemptId } = useParams<{ attemptId: string }>();
@@ -20,7 +33,10 @@ export default function AttemptPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittedScore, setSubmittedScore] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 minutes in seconds
+  const [assessmentDurationSeconds, setAssessmentDurationSeconds] = useState(
+    DEFAULT_DURATION_MINUTES * 60
+  );
+  const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATION_MINUTES * 60);
   const [selectedSection, setSelectedSection] = useState<string>("Quantitative"); // Quantitative first by default
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(
@@ -70,7 +86,27 @@ export default function AttemptPage() {
   useEffect(() => {
     if (isMobileDevice !== false) return;
     attemptService.getQuestions(id).then((data) => {
-      setQuestions(data);
+      const storedDurationSeconds = getStoredDurationSeconds(id);
+      const apiDurationSeconds =
+        Number.isFinite(data.durationMinutes) && data.durationMinutes > 0
+          ? data.durationMinutes * 60
+          : null;
+      const nextDurationSeconds =
+        apiDurationSeconds ??
+        storedDurationSeconds ??
+        DEFAULT_DURATION_MINUTES * 60;
+
+      setQuestions(data.questions);
+      setAssessmentDurationSeconds(nextDurationSeconds);
+      setTimeLeft((prev) =>
+        prev === DEFAULT_DURATION_MINUTES * 60 ? nextDurationSeconds : prev
+      );
+      if (typeof window !== "undefined" && apiDurationSeconds !== null) {
+        window.sessionStorage.setItem(
+          `attempt-duration:${id}`,
+          String(data.durationMinutes)
+        );
+      }
     });
   }, [id, isMobileDevice]);
 
@@ -298,6 +334,10 @@ export default function AttemptPage() {
   const currentQuestion = filteredQuestions[visibleCurrentIndex];
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
+  const progressPercent = Math.max(
+    0,
+    Math.min(100, (timeLeft / assessmentDurationSeconds) * 100)
+  );
 
   return (
     <div className="app-shell min-h-screen px-4 py-6 text-stone-900 sm:px-6">
@@ -391,7 +431,7 @@ export default function AttemptPage() {
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-stone-200">
                 <div 
                   className="h-full bg-[#c77131] transition-all duration-1000" 
-                  style={{ width: `${(timeLeft / (60 * 60)) * 100}%` }}
+                  style={{ width: `${progressPercent}%` }}
                 ></div>
               </div>
             </div>

@@ -1,7 +1,5 @@
 import { AuthLoginResponse, AuthUser } from "@/types";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://planitt-assessment.onrender.com";
+import { API_BASE_URL } from "@/lib/api";
 
 export const authService = {
   async login(email: string): Promise<AuthLoginResponse> {
@@ -27,14 +25,17 @@ export const authService = {
   },
 
   async me(): Promise<AuthUser> {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers = new Headers();
+
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
 
     const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
       credentials: "include",
-      headers: {
-        ...authHeader,
-      },
+      headers,
     });
 
     if (!res.ok) throw new Error("Unauthorized");
@@ -42,15 +43,18 @@ export const authService = {
   },
 
   async logout() {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers = new Headers();
+
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
 
     await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
-      headers: {
-        ...authHeader,
-      },
+      headers,
     });
     localStorage.removeItem("token");
   },

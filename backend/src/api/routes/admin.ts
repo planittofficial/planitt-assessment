@@ -8,6 +8,7 @@ import {
   getAttemptDetails,
   gradeDescriptiveAnswer,
   publishResult,
+  overrideAttemptResult,
   deleteAttempt,
   deleteAllAttemptsByAssessment,
   deleteAssessment,
@@ -49,6 +50,7 @@ router.get("/attempts/:attemptId/violations", getViolationsByAttempt);
 router.get("/attempts/:attemptId/descriptive", getDescriptiveAnswers);
 router.post("/answers/grade", gradeDescriptiveAnswer);
 router.post("/attempts/:attemptId/publish", publishResult);
+router.post("/attempts/:attemptId/result", overrideAttemptResult);
 router.delete("/attempts/:attemptId", deleteAttempt);
 router.post("/attempts/:attemptId/delete", deleteAttempt);
 router.delete("/assessments/:assessmentId/attempts/:attemptId", deleteAttempt);

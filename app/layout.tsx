@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import "../frontend/src/app/globals.css";
+import type { CSSProperties, ReactNode } from "react";
+import "./globals.css";
+import BackendWakeup from "@/components/BackendWakeup";
 import NotificationHost from "@/components/NotificationHost";
 import CandidateProfileMenu from "@/components/CandidateProfileMenu";
 import DialogHost from "@/components/DialogHost";
@@ -20,7 +22,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="en">
@@ -29,8 +31,9 @@ export default function RootLayout({
         style={{
           "--font-geist-sans": "Segoe UI, Arial, sans-serif",
           "--font-geist-mono": "Consolas, Courier New, monospace",
-        } as React.CSSProperties}
+        } as CSSProperties}
       >
+        <BackendWakeup />
         <CandidateProfileMenu key="candidate-menu" />
         {children}
         <DialogHost key="dialog-host" />

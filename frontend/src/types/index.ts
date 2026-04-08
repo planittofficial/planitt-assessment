@@ -12,13 +12,13 @@ export type Assessment = {
   id: string;
   _id?: string;
   title: string;
-  description: string;
+  description?: string;
   code?: string;
   duration_minutes: number;
   total_marks: number;
   pass_percentage: number;
   status?: string | boolean;
-  created_at: string;
+  created_at?: string;
 };
 
 export type Candidate = {
@@ -38,6 +38,7 @@ export type AuthUser = {
 
 export type AuthLoginResponse = {
   role: AuthUser["role"];
+  token?: string;
   email?: string;
   full_name?: string;
 };
@@ -57,4 +58,16 @@ export type Attempt = {
 export type AnswerPayload = {
   questionId: string;
   answer: string;
+};
+
+export type AttemptStartResponse = {
+  attemptId: string;
+  durationMinutes: number;
+  questions?: Question[];
+  message?: string;
+};
+
+export type AttemptQuestionsResponse = {
+  questions: Question[];
+  durationMinutes: number;
 };

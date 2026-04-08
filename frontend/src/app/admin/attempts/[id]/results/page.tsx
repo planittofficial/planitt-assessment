@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAttemptDetails } from "@/services/admin.service";
+import { getAttemptDetails, overrideAttemptResult } from "@/services/admin.service";
 import Link from "next/link";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 type AttemptResultAnswer = {
   answer_id: string | number;
@@ -18,11 +19,13 @@ type AttemptResultAnswer = {
 };
 
 type AttemptResultSummary = {
+  id?: string | number;
   started_at?: string;
   start_time?: string;
   submitted_at?: string;
   end_time?: string;
   result?: "PASS" | "FAIL" | string;
+  result_override?: "PASS" | "FAIL" | string | null;
   assessment_title: string;
   email: string;
   full_name?: string;
@@ -77,6 +80,7 @@ export default function AttemptResultsPage() {
   const [data, setData] = useState<AttemptResultData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
+  const [updatingResult, setUpdatingResult] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -133,6 +137,39 @@ export default function AttemptResultsPage() {
   const submittedTime = submittedAt ? new Date(submittedAt).getTime() : NaN;
   const hasValidDuration = Number.isFinite(startedTime) && Number.isFinite(submittedTime) && submittedTime >= startedTime;
   const analytics = data.analytics;
+  const isManualOverride = Boolean(attempt.result_override);
+  const reloadAttemptResult = async () => {
+    const response = await getAttemptDetails(id);
+    setData(response);
+  };
+
+  const handleManualResult = async (result: "PASS" | "FAIL") => {
+    setUpdatingResult(true);
+    try {
+      await overrideAttemptResult(id, { result });
+      await reloadAttemptResult();
+      notifySuccess(`Result marked as ${result}.`);
+    } catch (err) {
+      console.error("Failed to update manual result", err);
+      notifyError("Failed to update result.");
+    } finally {
+      setUpdatingResult(false);
+    }
+  };
+
+  const handleClearManualResult = async () => {
+    setUpdatingResult(true);
+    try {
+      await overrideAttemptResult(id, { clearOverride: true });
+      await reloadAttemptResult();
+      notifySuccess("Manual result cleared.");
+    } catch (err) {
+      console.error("Failed to clear manual result", err);
+      notifyError("Failed to clear manual result.");
+    } finally {
+      setUpdatingResult(false);
+    }
+  };
 
   return (
     <>
@@ -181,6 +218,11 @@ export default function AttemptResultsPage() {
                 }`}>
                   {attempt.result || 'PENDING'}
                 </p>
+                {isManualOverride && (
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                    Manual Override
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest mb-1">Started</p>
@@ -197,6 +239,30 @@ export default function AttemptResultsPage() {
                   }
                 </p>
               </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={() => handleManualResult("PASS")}
+                disabled={updatingResult}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+              >
+                {updatingResult ? "Updating..." : "Mark Pass"}
+              </button>
+              <button
+                onClick={() => handleManualResult("FAIL")}
+                disabled={updatingResult}
+                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-rose-500 disabled:opacity-50"
+              >
+                {updatingResult ? "Updating..." : "Mark Fail"}
+              </button>
+              <button
+                onClick={handleClearManualResult}
+                disabled={updatingResult || !isManualOverride}
+                className="rounded-lg border border-stone-300 bg-stone-100 px-4 py-2 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-200 disabled:opacity-50"
+              >
+                Clear Manual Override
+              </button>
             </div>
           </div>
         </div>

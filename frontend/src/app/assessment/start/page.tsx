@@ -9,6 +9,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
 import { isMobileOrTabletDevice } from "@/lib/device";
 
+function persistAttemptDuration(attemptId: string, durationMinutes: number) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(
+    `attempt-duration:${attemptId}`,
+    String(durationMinutes)
+  );
+}
+
 export default function StartAssessmentPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(true);
@@ -56,6 +64,7 @@ export default function StartAssessmentPage() {
     setError("");
     try {
       const res = await attemptService.start(code);
+      persistAttemptDuration(res.attemptId, res.durationMinutes);
       // Only force fullscreen after the attempt is successfully created.
       enterFullscreen();
       router.push(`/assessment/attempt/${res.attemptId}`);
@@ -63,8 +72,13 @@ export default function StartAssessmentPage() {
       const message = err instanceof Error ? err.message : "";
       const attemptId =
         err instanceof ApiError ? String(err.data?.attemptId || "") : "";
+      const durationMinutes =
+        err instanceof ApiError ? Number(err.data?.durationMinutes || 0) : 0;
 
       if (message.toLowerCase().includes("active attempt already exists") && attemptId) {
+        if (durationMinutes > 0) {
+          persistAttemptDuration(attemptId, durationMinutes);
+        }
         router.push(`/assessment/attempt/${attemptId}`);
         return;
       }

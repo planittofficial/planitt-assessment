@@ -7,23 +7,39 @@ import {
   publishAllResults,
 } from "@/services/admin.service";
 import Link from "next/link";
+import { ApiError } from "@/lib/api";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notify";
 import { openConfirmDialog } from "@/lib/dialog";
 import { Assessment } from "@/types";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export default function AdminAssessmentsPage() {
+  const { user, loading } = useAdmin();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [publishingId, setPublishingId] = useState<string | number | null>(null);
   const [deletingAssessmentId, setDeletingAssessmentId] = useState<string | number | null>(null);
 
   const loadAssessments = async () => {
-    const data = await getAssessments();
-    setAssessments(data);
+    try {
+      const data = await getAssessments();
+      setAssessments(data);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        return;
+      }
+      throw err;
+    }
   };
 
   useEffect(() => {
-    loadAssessments();
-  }, []);
+    if (loading) return;
+    if (user?.role?.toUpperCase() !== "ADMIN") return;
+
+    void loadAssessments().catch((err) => {
+      console.error("Failed to load assessments", err);
+      notifyError("Failed to load assessments");
+    });
+  }, [loading, user]);
 
   const handlePublishAll = async (assessmentId: string | number) => {
     const confirmed = await openConfirmDialog({
@@ -104,6 +120,9 @@ export default function AdminAssessmentsPage() {
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-600">
                   Code: <span className="font-mono font-bold uppercase text-[#c77131]">{a.code}</span>
+                </span>
+                <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-xs text-stone-600">
+                  Duration: <span className="font-bold text-stone-900">{a.duration_minutes} min</span>
                 </span>
                 <span
                   className={`rounded-full border px-3 py-1 text-xs ${

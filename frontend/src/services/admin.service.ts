@@ -48,6 +48,16 @@ export const publishResult = (attemptId: string | number) => {
   });
 };
 
+export const overrideAttemptResult = (
+  attemptId: string | number,
+  payload: { result?: "PASS" | "FAIL"; clearOverride?: boolean }
+) => {
+  return apiFetch(`/api/admin/attempts/${attemptId}/result`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
 export const deleteAttempt = async (
   attemptId: string | number,
   assessmentId?: string | number

@@ -96,10 +96,11 @@ export default function EditAssessmentPage() {
           : String(assessment.status || "").toUpperCase() === "ACTIVE";
 
       await updateAssessment(assessmentId, {
+        duration_minutes: assessment.duration_minutes,
         pass_percentage: assessment.pass_percentage,
         status: normalizedStatus ? "ACTIVE" : "INACTIVE",
       });
-      notifySuccess("Criteria updated successfully.");
+      notifySuccess("Criteria updated successfully. Existing results were recalculated where applicable.");
     } catch (err) {
       console.error(err);
       notifyError("Failed to update criteria.");
@@ -342,7 +343,17 @@ export default function EditAssessmentPage() {
             <h2 className="text-xl font-bold mb-6 text-yellow-500 flex items-center gap-2">
               🏆 Pass/Fail Criteria
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Duration (Minutes)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={assessment.duration_minutes}
+                  onChange={(e) => setAssessment({ ...assessment, duration_minutes: Number(e.target.value) })}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:border-yellow-500 transition-colors"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-2">Pass Percentage (%)</label>
                 <input

@@ -1,4 +1,4 @@
-const API_BASE_URL =
+export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://planitt-assessment.onrender.com";
 
 type ApiErrorBody = {
@@ -18,26 +18,26 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiFetch(
-  path: string,
-  options: RequestInit = {}
-) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const headers = new Headers(options.headers);
+
+  headers.set("Content-Type", "application/json");
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: "include", // ⭐ sends cookies
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeader,
-      ...(options.headers || {}),
-    },
     ...options,
+    credentials: "include",
+    headers,
   });
 
   if (!res.ok) {
     if (res.status === 401 && typeof window !== "undefined") {
-      // Keep client state consistent if a token is expired/invalid.
+      // Keep client state consistent if a token is expired or invalid.
       localStorage.removeItem("token");
     }
 
@@ -47,10 +47,8 @@ export async function apiFetch(
       ? await res.json().catch(() => ({} as ApiErrorBody))
       : {};
     const text = isJson ? "" : await res.text().catch(() => "");
-    const message =
-      data.message ||
-      text ||
-      `Request failed (${res.status})`;
+    const message = data.message || text || `Request failed (${res.status})`;
+
     throw new ApiError(message, res.status, data);
   }
 

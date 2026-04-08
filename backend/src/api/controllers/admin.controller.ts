@@ -7,6 +7,10 @@ import Attempt from "../../models/Attempt";
 import Violation from "../../models/Violation";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { finalizeAttemptIfComplete } from "../../services/finalizeAttempt.service";
+import {
+  recalculateAssessmentResults,
+  setManualResultOverride,
+} from "../../services/result.service";
 import mongoose from "mongoose";
 
 const ALLOWED_SECTIONS = new Set(["Quantitative", "Verbal", "Coding", "Logical"]);
@@ -39,7 +43,7 @@ function requireObjectIdParam(res: Response, name: string, value: unknown): bool
 export async function getAssessments(req: Request, res: Response) {
   try {
     const assessments = await Assessment.find()
-      .select("_id title is_active code created_at")
+      .select("_id title is_active code created_at duration_minutes")
       .sort({ created_at: -1 });
 
     const formatted = assessments.map((a) => ({
@@ -47,6 +51,7 @@ export async function getAssessments(req: Request, res: Response) {
       title: a.title,
       status: a.is_active ? "active" : "inactive",
       code: a.code,
+      duration_minutes: a.duration_minutes,
       created_at: a.created_at,
     }));
 
@@ -121,6 +126,7 @@ export async function getAttemptsByAssessment(
       submitted_at: a.submitted_at,
       final_score: a.final_score,
       result: a.result,
+      result_override: a.result_override,
       is_published: a.is_published,
     }));
 
@@ -367,6 +373,7 @@ export async function getAttemptDetails(req: Request, res: Response) {
         submitted_at: attempt.submitted_at,
         final_score: attempt.final_score,
         result: attempt.result,
+        result_override: attempt.result_override,
         assessment_title: (attempt.assessment_id as any)?.title,
         total_marks: (attempt.assessment_id as any)?.total_marks,
       },
@@ -515,6 +522,38 @@ export async function publishResult(req: Request, res: Response) {
   } catch (error) {
     console.error("❌ publishResult error:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function overrideAttemptResult(req: Request, res: Response) {
+  try {
+    const { attemptId } = req.params;
+    if (!requireObjectIdParam(res, "attemptId", attemptId)) {
+      return;
+    }
+
+    const requestedResult = String(req.body?.result || "").trim().toUpperCase();
+    const clearOverride = Boolean(req.body?.clearOverride);
+
+    if (!clearOverride && requestedResult !== "PASS" && requestedResult !== "FAIL") {
+      return res.status(400).json({ message: "result must be PASS or FAIL" });
+    }
+
+    const outcome = await setManualResultOverride(
+      attemptId,
+      clearOverride ? null : (requestedResult as "PASS" | "FAIL")
+    );
+
+    return res.json({
+      message: clearOverride
+        ? "Manual result cleared and recalculated successfully"
+        : "Manual result updated successfully",
+      result: outcome.result,
+      source: outcome.source,
+    });
+  } catch (error: any) {
+    console.error("overrideAttemptResult error:", error);
+    return res.status(500).json({ message: error?.message || "Internal server error" });
   }
 }
 
@@ -686,8 +725,8 @@ export async function updateAssessment(req: Request, res: Response) {
 
     const updateData: any = {};
     if (title) updateData.title = title;
-    if (duration_minutes) updateData.duration_minutes = duration_minutes;
-    if (pass_percentage) updateData.pass_percentage = pass_percentage;
+    if (duration_minutes !== undefined) updateData.duration_minutes = duration_minutes;
+    if (pass_percentage !== undefined) updateData.pass_percentage = pass_percentage;
     if (status !== undefined) {
       const normalizedStatus =
         typeof status === "string"
@@ -700,6 +739,8 @@ export async function updateAssessment(req: Request, res: Response) {
       }
     }
 
+    const shouldRecalculateResults = pass_percentage !== undefined;
+
     const result = await Assessment.findByIdAndUpdate(
       assessmentId,
       updateData,
@@ -710,7 +751,14 @@ export async function updateAssessment(req: Request, res: Response) {
       return res.status(404).json({ message: "Assessment not found" });
     }
 
-    res.json({ message: "Assessment updated successfully" });
+    const recalculation = shouldRecalculateResults
+      ? await recalculateAssessmentResults(assessmentId)
+      : null;
+
+    res.json({
+      message: "Assessment updated successfully",
+      recalculation,
+    });
   } catch (error) {
     console.error("❌ updateAssessment error:", error);
     res.status(500).json({ message: "Internal server error" });

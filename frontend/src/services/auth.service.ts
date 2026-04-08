@@ -38,7 +38,13 @@ export const authService = {
       headers,
     });
 
-    if (!res.ok) throw new Error("Unauthorized");
+    if (!res.ok) {
+      if (res.status === 401 && typeof window !== "undefined") {
+        // Prevent repeated /me calls with an expired/invalid token.
+        localStorage.removeItem("token");
+      }
+      throw new Error("Unauthorized");
+    }
     return res.json() as Promise<AuthUser>;
   },
 

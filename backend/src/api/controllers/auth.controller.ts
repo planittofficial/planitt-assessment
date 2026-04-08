@@ -9,12 +9,13 @@ import { AuthRequest } from "../middlewares/auth.middleware";
  */
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body as { email?: string; password?: string };
+  const normalizedEmail = String(email || "").trim().toLowerCase();
 
-  if (!email) {
+  if (!normalizedEmail) {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (!user) {
     return res.status(401).json({ message: "Invalid credentials" });
